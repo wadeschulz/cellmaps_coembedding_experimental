@@ -19,11 +19,11 @@ class TestCellmapsgenerateppirunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsgenerateppiRunner(0)
+        myobj = CellmapsgenerateppiRunner()
 
         self.assertIsNotNone(myobj)
 
     def test_run(self):
         """ Tests run()"""
-        myobj = CellmapsgenerateppiRunner(4)
-        self.assertEqual(4, myobj.run())
+        myobj = CellmapsgenerateppiRunner()
+        self.assertEqual(0, myobj.run())

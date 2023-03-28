@@ -44,8 +44,6 @@ def _parse_arguments(desc, args):
                              'logging.config.html#logging-config-fileformat '
                              'Setting this overrides -v parameter which uses '
                              ' default logger. (default None)')
-    parser.add_argument('--exitcode', help='Exit code this command will return',
-                        default=0, type=int)
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='Increases verbosity of logger to standard '
                              'error for log messages in this module. Messages are '
@@ -106,7 +104,7 @@ def main(args):
 
     try:
         _setup_logging(theargs)
-        return CellmapsgenerateppiRunner(theargs.exitcode).run()
+        return CellmapsgenerateppiRunner().run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

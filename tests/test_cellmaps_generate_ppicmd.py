@@ -25,15 +25,13 @@ class TestCellmaps_generate_ppi(unittest.TestCase):
         res = cellmaps_generate_ppicmd._parse_arguments('hi', [])
 
         self.assertEqual(res.verbose, 0)
-        self.assertEqual(res.exitcode, 0)
         self.assertEqual(res.logconf, None)
 
-        someargs = ['-vv', '--logconf', 'hi', '--exitcode', '3']
+        someargs = ['-vv', '--logconf', 'hi']
         res = cellmaps_generate_ppicmd._parse_arguments('hi', someargs)
 
         self.assertEqual(res.verbose, 2)
         self.assertEqual(res.logconf, 'hi')
-        self.assertEqual(res.exitcode, 3)
 
     def test_setup_logging(self):
         """ Tests logging setup"""
