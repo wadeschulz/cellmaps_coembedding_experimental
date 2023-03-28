@@ -38,6 +38,13 @@ def _parse_arguments(desc, args):
     """
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=Formatter)
+    parser.add_argument('outdir', help='Output directory')
+    parser.add_argument('--apms_embedding', required=True,
+                        help='APMS embedding file')
+    parser.add_argument('--image_embedding', required=True,
+                        help='Image embedding file')
+    parser.add_argument('--latent_dimension', type=int, default=128,
+                        help='Output dimension of embedding')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -104,7 +111,10 @@ def main(args):
 
     try:
         _setup_logging(theargs)
-        return CellmapsgenerateppiRunner().run()
+        return CellmapsgenerateppiRunner(outdir=theargs.outdir,
+                                         apms_embedding=theargs.apms_embedding,
+                                         image_embedding=theargs.image_embedding,
+                                         latent_dimension=theargs.latent_dimension).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

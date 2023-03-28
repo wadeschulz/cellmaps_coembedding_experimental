@@ -22,12 +22,21 @@ class TestCellmaps_generate_ppi(unittest.TestCase):
 
     def test_parse_arguments(self):
         """Tests parse arguments"""
-        res = cellmaps_generate_ppicmd._parse_arguments('hi', [])
+        res = cellmaps_generate_ppicmd._parse_arguments('hi', ['foo',
+                                                               '--apms_embedding',
+                                                               'apms',
+                                                               '--image_embedding',
+                                                               'image'])
 
         self.assertEqual(res.verbose, 0)
         self.assertEqual(res.logconf, None)
 
-        someargs = ['-vv', '--logconf', 'hi']
+        someargs = ['-vv', '--logconf', 'hi',
+                    'foo',
+                    '--apms_embedding',
+                    'apms',
+                    '--image_embedding',
+                    'image']
         res = cellmaps_generate_ppicmd._parse_arguments('hi', someargs)
 
         self.assertEqual(res.verbose, 2)
@@ -42,7 +51,11 @@ class TestCellmaps_generate_ppi(unittest.TestCase):
             pass
 
         # args.logconf is None
-        res = cellmaps_generate_ppicmd._parse_arguments('hi', [])
+        res = cellmaps_generate_ppicmd._parse_arguments('hi', ['foo',
+                                                               '--apms_embedding',
+                                                               'apms',
+                                                               '--image_embedding',
+                                                               'image'])
         cellmaps_generate_ppicmd._setup_logging(res)
 
         # args.logconf set to a file
@@ -74,7 +87,12 @@ args=(sys.stderr,)
 format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
 
             res = cellmaps_generate_ppicmd._parse_arguments('hi', ['--logconf',
-                                                                       logfile])
+                                                                   logfile,
+                                                                   'foo',
+                                                                   '--apms_embedding',
+                                                                   'apms',
+                                                                   '--image_embedding',
+                                                                   'image'])
             cellmaps_generate_ppicmd._setup_logging(res)
 
         finally:
@@ -86,7 +104,12 @@ format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
         # try where loading config is successful
         try:
             temp_dir = tempfile.mkdtemp()
-            res = cellmaps_generate_ppicmd.main(['myprog.py'])
-            self.assertEqual(res, 0)
+            res = cellmaps_generate_ppicmd.main(['myprog.py',
+                                                 'foo',
+                                                  '--apms_embedding',
+                                                  'apms',
+                                                  '--image_embedding',
+                                                  'image'])
+            self.assertEqual(res, 2)
         finally:
             shutil.rmtree(temp_dir)
