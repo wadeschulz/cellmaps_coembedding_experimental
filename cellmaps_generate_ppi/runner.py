@@ -52,15 +52,13 @@ class CellmapsgenerateppiRunner(object):
             reader = csv.reader(f, delimiter='\t')
             for row in reader:
                 uniq_genes.add(row[0])
-        print(uniq_genes)
-        with open(os.path.join(self._outdir, 'music_emd.tsv'), 'w') as f:
-            headerline = ['']
-            for x in range(1, 129):
-                headerline.append(str(x))
-            f.write('\t'.join(headerline) + '\n')
-            for gene in uniq_genes:
-                embedding = [gene]
-                for cntr in range(self._latent_dimension):
-                    embedding.append(str(random.random()))
-                f.write('\t'.join(embedding) + '\n')
+        with open(os.path.join(self._outdir, 'music_edgelist.tsv'), 'w') as f:
+
+            f.write('\t'.join(['GeneA', 'GeneB', 'Weight']) + '\n')
+            for genea in uniq_genes:
+                for geneb in uniq_genes:
+                    if genea == geneb:
+                        continue
+                    f.write(str(genea) + '\t' + str(geneb) + '\t' +
+                            str(random.random()) + '\n')
         return 0
