@@ -5,11 +5,11 @@
 
 
 import unittest
-from cellmaps_generate_ppi.runner import CellmapsgenerateppiRunner
-from cellmaps_generate_ppi.exceptions import CellmapsgenerateppiError
+from cellmaps_generate_ppi.runner import CellmapsGenerateppiRunner
+from cellmaps_generate_ppi.exceptions import CellmapsGenerateppiError
 
 
-class TestCellmapsgenerateppirunner(unittest.TestCase):
+class TestCellmapsGenerateppiRunner(unittest.TestCase):
     """Tests for `cellmaps_generate_ppi` package."""
 
     def setUp(self):
@@ -20,15 +20,15 @@ class TestCellmapsgenerateppirunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsgenerateppiRunner()
+        myobj = CellmapsGenerateppiRunner()
 
         self.assertIsNotNone(myobj)
 
     def test_run_no_outdir(self):
         """ Tests run()"""
-        myobj = CellmapsgenerateppiRunner()
+        myobj = CellmapsGenerateppiRunner()
         try:
             myobj.run()
             self.fail('Expected exception')
-        except CellmapsgenerateppiError as ce:
+        except CellmapsGenerateppiError as ce:
             self.assertEqual('outdir must be set', str(ce))

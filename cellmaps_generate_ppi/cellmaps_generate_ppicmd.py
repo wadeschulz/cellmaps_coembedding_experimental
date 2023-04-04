@@ -6,7 +6,7 @@ import logging
 import logging.config
 
 import cellmaps_generate_ppi
-from cellmaps_generate_ppi.runner import CellmapsgenerateppiRunner
+from cellmaps_generate_ppi.runner import CellmapsGenerateppiRunner
 
 logger = logging.getLogger(__name__)
 
@@ -95,14 +95,14 @@ def main(args):
     :param args: arguments passed to command line usually :py:func:`sys.argv[1:]`
     :type args: list
 
-    :return: return value of :py:meth:`cellmaps_generate_ppi.runner.CellmapsgenerateppiRunner.run`
+    :return: return value of :py:meth:`cellmaps_generate_ppi.runner.CellmapsGenerateppiRunner.run`
              or ``2`` if an exception is raised
     :rtype: int
     """
     desc = """
     Version {version}
 
-    Invokes run() method on CellmapsgenerateppiRunner
+    Invokes run() method on CellmapsGenerateppiRunner
 
     """.format(version=cellmaps_generate_ppi.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -111,7 +111,7 @@ def main(args):
 
     try:
         _setup_logging(theargs)
-        return CellmapsgenerateppiRunner(outdir=theargs.outdir,
+        return CellmapsGenerateppiRunner(outdir=theargs.outdir,
                                          apms_embedding=theargs.apms_embedding,
                                          image_embedding=theargs.image_embedding,
                                          latent_dimension=theargs.latent_dimension).run()

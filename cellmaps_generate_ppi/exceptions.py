@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class CellmapsgenerateppiError(Exception):
+class CellmapsGenerateppiError(Exception):
     """
     Base exception for cellmaps_generate_ppi
     """
