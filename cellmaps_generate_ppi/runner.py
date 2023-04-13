@@ -70,7 +70,11 @@ class CellmapsGenerateppiRunner(object):
 
                 f.write('\t'.join(['GeneA', 'GeneB', 'Weight']) + '\n')
                 for genea in uniq_genes:
+                    if len(genea) == 0:
+                        continue
                     for geneb in uniq_genes:
+                        if len(geneb) == 0:
+                            continue
                         if genea == geneb:
                             continue
                         f.write(str(genea) + '\t' + str(geneb) + '\t' +
