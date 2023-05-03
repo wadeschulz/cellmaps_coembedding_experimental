@@ -2,7 +2,7 @@ Developer Topics
 ====================
 
 This page contains topics related to development and
-deployment of **cellmaps_generate_ppi**
+deployment of **cellmaps_coembedding**
 
 
 

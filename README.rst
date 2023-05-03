@@ -1,13 +1,13 @@
 ==================
-CM4AI Generate PPI
+CM4AI CoEmbedding
 ==================
 
 
-.. image:: https://img.shields.io/pypi/v/cellmaps_generate_ppi.svg
-        :target: https://pypi.python.org/pypi/cellmaps_generate_ppi
+.. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
+        :target: https://pypi.python.org/pypi/cellmaps_coembedding
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_generate_ppi.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_generate_ppi
+.. image:: https://img.shields.io/travis/idekerlab/cellmaps_coembedding.svg
+        :target: https://travis-ci.com/idekerlab/cellmaps_coembedding
 
 .. image:: https://readthedocs.org/projects/cellmaps-generate-ppi/badge/?version=latest
         :target: https://cellmaps-generate-ppi.readthedocs.io/en/latest/?badge=latest
@@ -20,7 +20,7 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 
 
 * Free software: MIT license
-* Documentation: https://cellmaps-generate-ppi.readthedocs.io.
+* Documentation: https://cellmaps-coembedding.readthedocs.io.
 
 
 
@@ -39,10 +39,10 @@ Installation
 
 .. code-block::
 
-   git clone https://github.com/idekerlab/cellmaps_generate_ppi
-   cd cellmaps_generate_ppi
+   git clone https://github.com/idekerlab/cellmaps_coembedding
+   cd cellmaps_coembedding
    make dist
-   pip install dist/cellmaps_generate_ppicmd*whl
+   pip install dist/cellmaps_coembeddingcmd*whl
 
 
 Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
@@ -89,8 +89,8 @@ against those changes.
 
 .. code-block::
 
-    # From base directory of this repo cellmaps_generate_ppi
-    pip uninstall cellmaps_generate_ppi -y ; make clean dist; pip install dist/cellmaps_generate_ppi*whl
+    # From base directory of this repo cellmaps_coembedding
+    pip uninstall cellmaps_coembedding -y ; make clean dist; pip install dist/cellmaps_coembedding*whl
 
 
 
@@ -103,7 +103,7 @@ Needed files
 Usage
 -----
 
-For information invoke :code:`cellmaps_generate_ppicmd.py -h`
+For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 **Example usage**
 
@@ -111,7 +111,7 @@ For information invoke :code:`cellmaps_generate_ppicmd.py -h`
 
 .. code-block::
 
-   cellmaps_generate_ppicmd.py # TODO Add other needed arguments here
+   cellmaps_coembeddingcmd.py # TODO Add other needed arguments here
 
 
 Via Docker
@@ -124,7 +124,7 @@ Via Docker
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_generate_ppi:0.1.0 cellmaps_generate_ppicmd.py # TODO Add other needed arguments here
+   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_coembedding:0.1.0 cellmaps_coembeddingcmd.py # TODO Add other needed arguments here
 
 
 Credits

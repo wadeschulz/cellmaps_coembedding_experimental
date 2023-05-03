@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/idekerlab/cellmaps_generate_ppi/issues.
+Report bugs at https://github.com/idekerlab/cellmaps_coembedding/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/idekerlab/cellmaps_generate_ppi/issues.
+The best way to send feedback is to file an issue at https://github.com/idekerlab/cellmaps_coembedding/issues.
 
 If you are proposing a feature:
 
@@ -57,17 +57,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `cellmaps_generate_ppi` for local development.
+Ready to contribute? Here's how to set up `cellmaps_coembedding` for local development.
 
-1. Fork the `cellmaps_generate_ppi` repo on GitHub.
+1. Fork the `cellmaps_coembedding` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/cellmaps_generate_ppi.git
+    $ git clone git@github.com:your_name_here/cellmaps_coembedding.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv cellmaps_generate_ppi
-    $ cd cellmaps_generate_ppi/
+    $ mkvirtualenv cellmaps_coembedding
+    $ cd cellmaps_coembedding/
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -79,7 +79,7 @@ Ready to contribute? Here's how to set up `cellmaps_generate_ppi` for local deve
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 cellmaps_generate_ppi tests
+    $ flake8 cellmaps_coembedding tests
     $ python setup.py test or py.test
     $ tox
 
@@ -103,7 +103,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/idekerlab/cellmaps_generate_ppi/pull_requests
+   https://travis-ci.org/idekerlab/cellmaps_coembedding/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
 Tips
@@ -112,7 +112,7 @@ Tips
 To run a subset of tests::
 
 
-    $ python -m unittest tests.test_cellmaps_generate_ppi
+    $ python -m unittest tests.test_cellmaps_coembedding
 
 Deploying
 ---------

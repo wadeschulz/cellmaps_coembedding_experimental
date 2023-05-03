@@ -5,8 +5,8 @@ import sys
 import logging
 import logging.config
 
-import cellmaps_generate_ppi
-from cellmaps_generate_ppi.runner import CellmapsGenerateppiRunner
+import cellmaps_coembedding
+from cellmaps_coembedding.runner import CellmapsCoEmbeddingRunner
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ def _parse_arguments(desc, args):
                              'logging)')
     parser.add_argument('--version', action='version',
                         version=('%(prog)s ' +
-                                 cellmaps_generate_ppi.__version__))
+                                 cellmaps_coembedding.__version__))
 
     return parser.parse_args(args)
 
@@ -95,23 +95,23 @@ def main(args):
     :param args: arguments passed to command line usually :py:func:`sys.argv[1:]`
     :type args: list
 
-    :return: return value of :py:meth:`cellmaps_generate_ppi.runner.CellmapsGenerateppiRunner.run`
+    :return: return value of :py:meth:`cellmaps_coembedding.runner.CellmapsCoEmbeddingRunner.run`
              or ``2`` if an exception is raised
     :rtype: int
     """
     desc = """
     Version {version}
 
-    Invokes run() method on CellmapsGenerateppiRunner
+    Invokes run() method on CellmapsCoEmbeddingRunner
 
-    """.format(version=cellmaps_generate_ppi.__version__)
+    """.format(version=cellmaps_coembedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
-    theargs.version = cellmaps_generate_ppi.__version__
+    theargs.version = cellmaps_coembedding.__version__
 
     try:
         _setup_logging(theargs)
-        return CellmapsGenerateppiRunner(outdir=theargs.outdir,
+        return CellmapsCoEmbeddingRunner(outdir=theargs.outdir,
                                          apms_embedding=theargs.apms_embedding,
                                          image_embedding=theargs.image_embedding,
                                          latent_dimension=theargs.latent_dimension).run()

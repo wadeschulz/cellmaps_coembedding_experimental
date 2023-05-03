@@ -11,13 +11,12 @@ python:
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-    - pip install https://github.com/idekerlab/cellmaps_utils/archive/master.zip
     - pip install -r requirements.txt
     - pip install coveralls
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run --source cellmaps_generate_ppi -m unittest discover
+    - coverage run --source cellmaps_coembedding -m unittest discover
 
 after_success: coveralls
 

@@ -12,7 +12,7 @@ To install CM4AI Generate PPI, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install cellmaps_generate_ppi
+    $ pip install cellmaps_coembedding
 
 This is the preferred method to install CM4AI Generate PPI, as it will always install the most recent stable release.
 
@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/idekerlab/cellmaps_generate_ppi
+    $ git clone git://github.com/idekerlab/cellmaps_coembedding
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/idekerlab/cellmaps_generate_ppi/tarball/master
+    $ curl  -OL https://github.com/idekerlab/cellmaps_coembedding/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/idekerlab/cellmaps_generate_ppi
-.. _tarball: https://github.com/idekerlab/cellmaps_generate_ppi/tarball/master
+.. _Github repo: https://github.com/idekerlab/cellmaps_coembedding
+.. _tarball: https://github.com/idekerlab/cellmaps_coembedding/tarball/master

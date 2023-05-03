@@ -1,7 +1,7 @@
 Expected configuration for .pypirc file
 ============================================
 
-To run ``make testrelease`` or ``make release`` to deploy cellmaps_generate_ppi to TestPyPi_ & PyPi_ you must have credentials set up.
+To run ``make testrelease`` or ``make release`` to deploy cellmaps_coembedding to TestPyPi_ & PyPi_ you must have credentials set up.
 
 #. If not already, create account on PyPi_
 #. If not already, create account on TestPyPi_

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# cellmaps_generate_ppi documentation build configuration file, created by
+# cellmaps_coembedding documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -24,7 +24,7 @@ import re
 
 sys.path.insert(0, os.path.abspath('..'))
 
-import cellmaps_generate_ppi
+import cellmaps_coembedding
 
 # -- General configuration ---------------------------------------------
 
@@ -63,7 +63,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'CM4AI Generate PPI'
+project = u'CM4AI CoEmbedding'
 copyright = u"2023, The Regents of the University of California"
 author = u"Leah Schaffer"
 
@@ -76,7 +76,7 @@ version = None
 # The full version, including alpha/beta/rc tags.
 release = None
 
-init_file = os.path.join('..', 'cellmaps_generate_ppi', '__init__.py')
+init_file = os.path.join('..', 'cellmaps_coembedding', '__init__.py')
 with open(init_file) as ver_file:
     for line in ver_file:
         if line.startswith('__version__'):
@@ -158,8 +158,8 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'cellmaps_generate_ppi.tex',
-     u'CM4AI Generate PPI Documentation',
+    (master_doc, 'cellmaps_coembedding.tex',
+     u'CM4AI CoEmbedding Documentation',
      u'Leah Schaffer', 'manual'),
 ]
 
@@ -169,8 +169,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'cellmaps_generate_ppi',
-     u'CM4AI Generate PPI Documentation',
+    (master_doc, 'cellmaps_coembedding',
+     u'CM4AI CoEmbedding Documentation',
      [author], 1)
 ]
 
@@ -181,10 +181,10 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'cellmaps_generate_ppi',
-     u'CM4AI Generate PPI Documentation',
+    (master_doc, 'cellmaps_coembedding',
+     u'CM4AI CoEmbedding Documentation',
      author,
-     'cellmaps_generate_ppi',
+     'cellmaps_coembedding',
      'One line description of project.',
      'Miscellaneous'),
 ]

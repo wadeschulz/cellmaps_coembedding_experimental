@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `cellmaps_generate_ppi` package."""
+"""Tests for `cellmaps_coembedding` package."""
 
 
 import unittest
-from cellmaps_generate_ppi.runner import CellmapsGenerateppiRunner
-from cellmaps_generate_ppi.exceptions import CellmapsGenerateppiError
+from cellmaps_coembedding.runner import CellmapsCoEmbeddingRunner
+from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 
-class TestCellmapsGenerateppiRunner(unittest.TestCase):
-    """Tests for `cellmaps_generate_ppi` package."""
+class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
+    """Tests for `cellmaps_coembedding` package."""
 
     def setUp(self):
         """Set up test fixtures, if any."""
@@ -20,15 +20,15 @@ class TestCellmapsGenerateppiRunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsGenerateppiRunner()
+        myobj = CellmapsCoEmbeddingRunner()
 
         self.assertIsNotNone(myobj)
 
     def test_run_no_outdir(self):
         """ Tests run()"""
-        myobj = CellmapsGenerateppiRunner()
+        myobj = CellmapsCoEmbeddingRunner()
         try:
             myobj.run()
             self.fail('Expected exception')
-        except CellmapsGenerateppiError as ce:
+        except CellmapsCoEmbeddingError as ce:
             self.assertEqual('outdir must be set', str(ce))

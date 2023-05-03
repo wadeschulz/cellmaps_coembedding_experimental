@@ -1,15 +1,15 @@
-Welcome to CM4AI Generate PPI's documentation!
+Welcome to CM4AI CoEmbedding's documentation!
 ================================================================
 
 
-.. image:: https://img.shields.io/pypi/v/cellmaps_generate_ppi.svg
-        :target: https://pypi.python.org/pypi/cellmaps_generate_ppi
+.. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
+        :target: https://pypi.python.org/pypi/cellmaps_coembedding
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_generate_ppi.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_generate_ppi
+.. image:: https://img.shields.io/travis/idekerlab/cellmaps_coembedding.svg
+        :target: https://travis-ci.com/idekerlab/cellmaps_coembedding
 
-.. image:: https://readthedocs.org/projects/cellmaps-generate-ppi/badge/?version=latest
-        :target: https://cellmaps-generate-ppi.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/cellmaps-coembedding/badge/?version=latest
+        :target: https://cellmaps-coembedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
