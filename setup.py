@@ -19,7 +19,12 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = ['cellmaps_utils',
-                'fairscape-cli']
+                'fairscape-cli',
+                'phenograph',
+                'numpy',
+                'torch',
+                'pandas',
+                'matplotlib']
 
 setup_requirements = [ ]
 

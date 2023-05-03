@@ -7,6 +7,7 @@ import logging
 import time
 from cellmaps_utils import logutils
 import cellmaps_coembedding
+from cellmaps_coembedding import muse_sc as muse
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,9 @@ class CellmapsCoEmbeddingRunner(object):
     """
     def __init__(self, outdir=None, image_embedding=None,
                  apms_embedding=None,
-                 latent_dimension=None,
+                 image_dimension=1024,
+                 apms_dimension=1024,
+                 latent_dimension=128,
                  skip_logging=False,
                  misc_info_dict=None):
         """
@@ -76,6 +79,27 @@ class CellmapsCoEmbeddingRunner(object):
                                           handlerprefix='cellmaps_coembedding')
                 self._write_task_start_json()
 
+            imgdim = 1024  # input dim of image
+            ppidim = 1024  # input dim of ppi
+            latent_dim = 128  # output dim of music embedding
+            k = 10  # k nearest neighbors value used for clustering - clustering used for triplet loss
+            min_diff = 0.2  # margin for triplet loss
+            dropout = 0.25  # dropout between neural net layers
+            n_epochs = 500  # training epochs
+            lambda_regul = 5  # weight for regularization term in loss
+            lambda_super = 5  # weight for triplet loss term in loss
+
+            # TODO: Fix this
+            """
+            muse.muse_fit_predict(resultsdir=os.path.join(self._outdir, 'music_emd.tsv'),
+                                  index=overlapping_proteins, data_x=ppi_features.values,
+                                  data_y=image_features.values,
+                                  latent_dim=latent_dim,
+                                  n_epochs=n_epochs,
+                                  min_diff=min_diff,
+                                  k=k, dropout=dropout)
+
+            
             uniq_genes = set()
             with open(self._image_embedding, 'r') as f:
                 reader = csv.reader(f, delimiter='\t')
@@ -99,6 +123,7 @@ class CellmapsCoEmbeddingRunner(object):
                             continue
                         f.write(str(genea) + '\t' + str(geneb) + '\t' +
                                 str(random.random()) + '\n')
+            """
             exitcode = 0
         finally:
             self._end_time = int(time.time())
