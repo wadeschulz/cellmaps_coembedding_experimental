@@ -1,5 +1,4 @@
 cellmaps_utils
-fairscape-cli
 phenograph
 numpy
 torch
