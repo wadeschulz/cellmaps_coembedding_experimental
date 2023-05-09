@@ -6,6 +6,7 @@ import logging
 import logging.config
 
 import cellmaps_coembedding
+from cellmaps_coembedding.runner import FakeCoEmbeddingGenerator
 from cellmaps_coembedding.runner import CellmapsCoEmbeddingRunner
 
 logger = logging.getLogger(__name__)
@@ -39,10 +40,12 @@ def _parse_arguments(desc, args):
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=Formatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--apms_embedding', required=True,
-                        help='APMS embedding file')
-    parser.add_argument('--image_embedding', required=True,
-                        help='Image embedding file')
+    parser.add_argument('--ppi_embeddingdir', required=True,
+                        help='Directory aka rocrate where ppi '
+                             'embedding file resides')
+    parser.add_argument('--image_embeddingdir', required=True,
+                        help='Directory aka rocrate image embedding '
+                             'file resides')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
     parser.add_argument('--logconf', default=None,
@@ -111,10 +114,12 @@ def main(args):
 
     try:
         _setup_logging(theargs)
+        gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                       ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                       image_embeddingdir=theargs.image_embeddingdir)
         return CellmapsCoEmbeddingRunner(outdir=theargs.outdir,
-                                         apms_embedding=theargs.apms_embedding,
-                                         image_embedding=theargs.image_embedding,
-                                         latent_dimension=theargs.latent_dimension).run()
+                                         embedding_generator=gen,
+                                         misc_info_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
