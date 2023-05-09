@@ -23,9 +23,9 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
     def test_parse_arguments(self):
         """Tests parse arguments"""
         res = cellmaps_coembeddingcmd._parse_arguments('hi', ['foo',
-                                                               '--apms_embedding',
+                                                               '--ppi_embeddingdir',
                                                                'apms',
-                                                               '--image_embedding',
+                                                               '--image_embeddingdir',
                                                                'image'])
 
         self.assertEqual(res.verbose, 0)
@@ -33,14 +33,14 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
 
         someargs = ['-vv', '--logconf', 'hi',
                     'foo',
-                    '--apms_embedding',
+                    '--ppi_embeddingdir',
                     'apms',
-                    '--image_embedding',
+                    '--image_embeddingdir',
                     'image']
         res = cellmaps_coembeddingcmd._parse_arguments('hi', someargs)
 
-        self.assertEqual(res.verbose, 2)
-        self.assertEqual(res.logconf, 'hi')
+        self.assertEqual(2, res.verbose)
+        self.assertEqual('hi', res.logconf)
 
     def test_main(self):
         """Tests main function"""
@@ -50,10 +50,10 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
             temp_dir = tempfile.mkdtemp()
             res = cellmaps_coembeddingcmd.main(['myprog.py',
                                                  'foo',
-                                                  '--apms_embedding',
+                                                  '--ppi_embeddingdir',
                                                   'apms',
-                                                  '--image_embedding',
+                                                  '--image_embeddingdir',
                                                   'image'])
-            self.assertEqual(res, 2)
+            self.assertEqual(2, res)
         finally:
             shutil.rmtree(temp_dir)

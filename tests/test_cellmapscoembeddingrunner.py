@@ -20,15 +20,14 @@ class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsCoEmbeddingRunner()
+        myobj = CellmapsCoEmbeddingRunner(outdir='foo')
 
         self.assertIsNotNone(myobj)
 
-    def test_run_no_outdir(self):
+    def test_constructor_no_outdir(self):
         """ Tests run()"""
-        myobj = CellmapsCoEmbeddingRunner()
         try:
-            myobj.run()
+            myobj = CellmapsCoEmbeddingRunner()
             self.fail('Expected exception')
         except CellmapsCoEmbeddingError as ce:
-            self.assertEqual('outdir must be set', str(ce))
+            self.assertEqual('outdir is None', str(ce))
