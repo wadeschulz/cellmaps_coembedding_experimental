@@ -5,10 +5,12 @@ import csv
 import random
 import logging
 import time
+
+from cellmaps_utils import constants
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_coembedding
-from cellmaps_coembedding import muse_sc as muse
+import cellmaps_coembedding.muse_sc as muse
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -21,12 +23,12 @@ class ImageEmbeddingFilterAndNameTranslator(object):
 
     """
 
-    def __init__(self, image_embeddingdir=None):
+    def __init__(self, image_downloaddir=None):
         """
         Constructor
         """
-        self._id_to_gene_mapping = self._gen_filtered_mapping(os.path.join(image_embeddingdir,
-                                                                           'image_gene_node_attributes.tsv'))
+        self._id_to_gene_mapping = self._gen_filtered_mapping(os.path.join(image_downloaddir,
+                                                                           constants.IMAGE_GENE_NODE_ATTR_FILE))
 
     def _gen_filtered_mapping(self, image_gene_node_attrs_file):
         """
@@ -42,10 +44,12 @@ class ImageEmbeddingFilterAndNameTranslator(object):
                 mapping_dict[row['filename'].split(',')[0]] = row['name']
         return mapping_dict
 
-    def get_oldname_to_new_name_mapping(self):
+    def get_name_mapping(self):
         """
+        Gets mapping of old name to new name
 
-        :return:
+        :return: mapping of old name to new name
+        :rtype: dict
         """
         return self._id_to_gene_mapping
 
@@ -64,7 +68,7 @@ class ImageEmbeddingFilterAndNameTranslator(object):
             if row[0] not in self._id_to_gene_mapping:
                 continue
             new_row = row.copy()
-            new_row[0] = self._id_to_gene_mapping(row[0])
+            new_row[0] = self._id_to_gene_mapping[row[0]]
             res_embeddings.append(new_row)
         return res_embeddings
 
@@ -107,6 +111,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
                  image_embeddingdir=None,
+                 image_downloaddir=None,
                  img_emd_translator=None):
         """
         Constructor
@@ -114,10 +119,9 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         """
         super().__init__(dimensions=dimensions)
         if img_emd_translator is None:
-            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_embeddingdir=image_embeddingdir)
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=image_downloaddir)
         self._ppi_embeddingdir = ppi_embeddingdir
         self._image_embeddingdir = image_embeddingdir
-        self._img_emd_translator = img_emd_translator
 
     def _get_set_of_embedding_names(self, embedding):
         """
@@ -155,8 +159,9 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         :return: embeddings
         :rtype: list
         """
-
-        return self._get_embedding(os.path.join(self._ppi_embeddingdir, 'ppi_emd.tsv'))
+        # Todo: put ppi_emd.tsv into constants of cellmaps_utils
+        return self._get_embedding(os.path.join(self._ppi_embeddingdir,
+                                                constants.PPI_EMBEDDING_FILE))
 
     def _get_image_embeddings(self):
         """
@@ -165,7 +170,9 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         :return: embeddings
         :rtype: list
         """
-        return self._get_embedding(os.path.join(self._image_embeddingdir, 'image_emd.tsv'))
+        # Todo: put image_emd.tsv into constants of cellmaps_utils
+        return self._get_embedding(os.path.join(self._image_embeddingdir,
+                                                constants.IMAGE_EMBEDDING_FILE))
 
     def get_next_embedding(self):
         """
@@ -174,18 +181,26 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         :return:
         """
         ppi_embeddings = self._get_ppi_embeddings()
+        logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
         raw_embeddings = self._get_image_embeddings()
+        logger.info('There are ' + str(len(raw_embeddings)) + ' raw image embeddings')
+
         image_embeddings = self._img_emd_translator.translate(raw_embeddings)
+        logger.info('There are ' + str(len(image_embeddings)) +
+                    ' translated and filtered image embeddings')
 
         ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
         image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
         intersection_embedding_names = ppi_embedding_names.intersection(image_embedding_names)
+        logger.info('There are ' +
+                    str(len(intersection_embedding_names)) +
+                    ' overlapping embeddings')
         for embed_name in intersection_embedding_names:
             row = [embed_name]
             row.extend([random.random() for x in range(0, self.get_dimensions())])
             yield row
 
-    def get_image_embedding_oldname_to_new_name_mapping(self):
+    def get_name_mapping(self):
         """
 
         :return:
@@ -193,7 +208,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         return self._img_emd_translator.get_oldname_to_new_name_mapping()
 
 
-class CellmapsCoEmbeddingRunner(object):
+class CellmapsCoEmbedder(object):
     """
     Class to run algorithm
     """
@@ -208,7 +223,7 @@ class CellmapsCoEmbeddingRunner(object):
         """
         Constructor
 
-        :param exitcode: value to return via :py:meth:`.CellmapsCoEmbeddingRunner.run` method
+        :param exitcode: value to return via :py:meth:`.CellmapsCoEmbedder.run` method
         :type int:
         """
         if outdir is None:
@@ -247,6 +262,58 @@ class CellmapsCoEmbeddingRunner(object):
                                        version=cellmaps_coembedding.__version__,
                                        data=data)
 
+    def _create_run_crate(self):
+        """
+        Creates rocrate for output directory
+
+        :raises CellMapsProvenanceError: If there is an error
+        """
+        # TODO: If organization or project name is unset need to pull from input rocrate
+        org_name = self._organization_name
+        if org_name is None:
+            org_name = 'TODO BETTER SET THIS via input rocrate'
+
+        proj_name = self._project_name
+        if proj_name is None:
+            proj_name = 'TODO BETTER SET THIS via input rocrate'
+        try:
+            self._provenance_utils.register_rocrate(self._outdir,
+                                                    name='cellmaps_coembedding',
+                                                    organization_name=org_name,
+                                                    project_name=proj_name)
+        except TypeError as te:
+            raise CellmapsCoEmbeddingError('Invalid provenance: ' + str(te))
+        except KeyError as ke:
+            raise CellmapsCoEmbeddingError('Key missing in provenance: ' + str(ke))
+
+    def _register_software(self):
+        """
+        Registers this tool
+
+        :raises CellMapsImageEmbeddingError: If fairscape call fails
+        """
+        self._softwareid = self._provenance_utils.register_software(self._outdir,
+                                                                    name=self._name,
+                                                                    description=cellmaps_coembedding.__description__,
+                                                                    author=cellmaps_coembedding.__author__,
+                                                                    version=cellmaps_coembedding.__version__,
+                                                                    file_format='.py',
+                                                                    url=cellmaps_coembedding.__repo_url__)
+
+    def _register_computation(self):
+        """
+        # Todo: added inused dataset, software and what is being generated
+        :return:
+        """
+        self._provenance_utils.register_computation(self._outdir,
+                                                    name=cellmaps_coembedding.__name__ + ' computation',
+                                                    run_by=str(os.getlogin()),
+                                                    command=str(self._input_data_dict),
+                                                    description='run of ' + cellmaps_coembedding.__name__,
+                                                    used_software=[self._softwareid])
+                                                    #used_dataset=[self._unique_datasetid, self._samples_datasetid],
+                                                    #generated=[self._image_gene_attrid])
+
     def run(self):
         """
         Runs CM4AI Generate PPI
@@ -267,6 +334,27 @@ class CellmapsCoEmbeddingRunner(object):
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_coembedding')
                 self._write_task_start_json()
+
+            self._create_run_crate()
+
+            # Todo: uncomment when fixed
+            # register software fails due to this bug:
+            # https://github.com/fairscape/fairscape-cli/issues/7
+            # self._register_software()
+
+            # generate result
+            with open(os.path.join(self._outdir, constants.CO_EMBEDDING_FILE), 'w') as f:
+                writer = csv.writer(f, delimiter='\t')
+                header_line = ['']
+                header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
+                writer.writerow(header_line)
+                for row in self._embedding_generator.get_next_embedding():
+                    writer.writerow(row)
+
+            # Todo: uncomment when above work
+            # Above registrations need to work for this to work
+            # register computation
+            # self._register_computation()
 
             """
             imgdim = 1024  # input dim of image

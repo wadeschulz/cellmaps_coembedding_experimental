@@ -26,7 +26,9 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                                                                '--ppi_embeddingdir',
                                                                'apms',
                                                                '--image_embeddingdir',
-                                                               'image'])
+                                                               'image',
+                                                               '--image_downloaddir',
+                                                               'download'])
 
         self.assertEqual(res.verbose, 0)
         self.assertEqual(res.logconf, None)
@@ -36,11 +38,15 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                     '--ppi_embeddingdir',
                     'apms',
                     '--image_embeddingdir',
-                    'image']
+                    'image', '--image_downloaddir', 'download']
         res = cellmaps_coembeddingcmd._parse_arguments('hi', someargs)
 
         self.assertEqual(2, res.verbose)
         self.assertEqual('hi', res.logconf)
+        self.assertEqual('foo', res.outdir)
+        self.assertEqual('apms', res.ppi_embeddingdir)
+        self.assertEqual('image', res.image_embeddingdir)
+        self.assertEqual('download', res.image_downloaddir)
 
     def test_main(self):
         """Tests main function"""
@@ -53,7 +59,9 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                                                   '--ppi_embeddingdir',
                                                   'apms',
                                                   '--image_embeddingdir',
-                                                  'image'])
+                                                  'image',
+                                                 '--image_downloaddir',
+                                                'download'])
             self.assertEqual(2, res)
         finally:
             shutil.rmtree(temp_dir)

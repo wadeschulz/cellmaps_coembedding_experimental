@@ -5,25 +5,13 @@ import sys
 import logging
 import logging.config
 
+from cellmaps_utils import logutils
+from cellmaps_utils import constants
 import cellmaps_coembedding
 from cellmaps_coembedding.runner import FakeCoEmbeddingGenerator
-from cellmaps_coembedding.runner import CellmapsCoEmbeddingRunner
+from cellmaps_coembedding.runner import CellmapsCoEmbedder
 
 logger = logging.getLogger(__name__)
-
-
-LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
-             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
-
-
-class Formatter(argparse.ArgumentDefaultsHelpFormatter,
-                argparse.RawDescriptionHelpFormatter):
-    """
-    Combine two Formatters to get help and default values
-    displayed when showing help
-
-    """
-    pass
 
 
 def _parse_arguments(desc, args):
@@ -38,13 +26,17 @@ def _parse_arguments(desc, args):
     :rtype: :py:class:`argparse.Namespace`
     """
     parser = argparse.ArgumentParser(description=desc,
-                                     formatter_class=Formatter)
+                                     formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument('--ppi_embeddingdir', required=True,
                         help='Directory aka rocrate where ppi '
                              'embedding file resides')
     parser.add_argument('--image_embeddingdir', required=True,
                         help='Directory aka rocrate image embedding '
+                             'file resides')
+    parser.add_argument('--image_downloaddir', required=True,
+                        help='Directory containing image download data or'
+                             'more specifically rocrate where '
                              'file resides')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
@@ -68,29 +60,6 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def _setup_logging(args):
-    """
-    Sets up logging based on parsed command line arguments.
-    If args.logconf is set use that configuration otherwise look
-    at args.verbose and set logging for this module
-
-    :param args: parsed command line arguments from argparse
-    :raises AttributeError: If args is None or args.logconf is None
-    :return: None
-    """
-
-    if args.logconf is None:
-        level = (50 - (10 * args.verbose))
-        logging.basicConfig(format=LOG_FORMAT,
-                            level=level)
-        logger.setLevel(level)
-        return
-
-    # logconf was set use that file
-    logging.config.fileConfig(args.logconf,
-                              disable_existing_loggers=False)
-
-
 def main(args):
     """
     Main entry point for program
@@ -98,14 +67,14 @@ def main(args):
     :param args: arguments passed to command line usually :py:func:`sys.argv[1:]`
     :type args: list
 
-    :return: return value of :py:meth:`cellmaps_coembedding.runner.CellmapsCoEmbeddingRunner.run`
+    :return: return value of :py:meth:`cellmaps_coembedding.runner.CellmapsCoEmbedder.run`
              or ``2`` if an exception is raised
     :rtype: int
     """
     desc = """
     Version {version}
 
-    Invokes run() method on CellmapsCoEmbeddingRunner
+    Invokes run() method on CellmapsCoEmbedder
 
     """.format(version=cellmaps_coembedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -113,13 +82,14 @@ def main(args):
     theargs.version = cellmaps_coembedding.__version__
 
     try:
-        _setup_logging(theargs)
+        logutils.setup_cmd_logging(theargs)
         gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                        ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                       image_embeddingdir=theargs.image_embeddingdir)
-        return CellmapsCoEmbeddingRunner(outdir=theargs.outdir,
-                                         embedding_generator=gen,
-                                         misc_info_dict=theargs.__dict__).run()
+                                       image_embeddingdir=theargs.image_embeddingdir,
+                                       image_downloaddir=theargs.image_downloaddir)
+        return CellmapsCoEmbedder(outdir=theargs.outdir,
+                                  embedding_generator=gen,
+                                  misc_info_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

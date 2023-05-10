@@ -5,7 +5,7 @@
 
 
 import unittest
-from cellmaps_coembedding.runner import CellmapsCoEmbeddingRunner
+from cellmaps_coembedding.runner import CellmapsCoEmbedder
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 
@@ -20,14 +20,14 @@ class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsCoEmbeddingRunner(outdir='foo')
+        myobj = CellmapsCoEmbedder(outdir='foo')
 
         self.assertIsNotNone(myobj)
 
     def test_constructor_no_outdir(self):
         """ Tests run()"""
         try:
-            myobj = CellmapsCoEmbeddingRunner()
+            myobj = CellmapsCoEmbedder()
             self.fail('Expected exception')
         except CellmapsCoEmbeddingError as ce:
             self.assertEqual('outdir is None', str(ce))
