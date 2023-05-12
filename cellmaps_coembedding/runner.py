@@ -5,6 +5,7 @@ import csv
 import random
 import logging
 import time
+from datetime import date
 
 from cellmaps_utils import constants
 from cellmaps_utils import logutils
@@ -213,13 +214,14 @@ class CellmapsCoEmbedder(object):
     Class to run algorithm
     """
     def __init__(self, outdir=None,
+                 inputdirs=None,
                  embedding_generator=None,
-                 name=cellmaps_coembedding.__name__,
+                 name=None,
                  organization_name=None,
                  project_name=None,
                  provenance_utils=ProvenanceUtil(),
                  skip_logging=False,
-                 misc_info_dict=None):
+                 input_data_dict=None):
         """
         Constructor
 
@@ -229,6 +231,7 @@ class CellmapsCoEmbedder(object):
         if outdir is None:
             raise CellmapsCoEmbeddingError('outdir is None')
         self._outdir = os.path.abspath(outdir)
+        self._inputdirs = inputdirs
         self._start_time = int(time.time())
         self._end_time = -1
         self._name = name
@@ -236,8 +239,9 @@ class CellmapsCoEmbedder(object):
         self._organization_name = organization_name
         self._provenance_utils = provenance_utils
         self._embedding_generator = embedding_generator
-        self._misc_info_dict = misc_info_dict
+        self._input_data_dict = input_data_dict
         self._softwareid = None
+        self._coembedding_id = None
 
         if skip_logging is None:
             self._skip_logging = False
@@ -254,31 +258,44 @@ class CellmapsCoEmbedder(object):
         """
         data = {}
 
-        if self._misc_info_dict is not None:
-            data.update(self._misc_info_dict)
+        if self._input_data_dict is not None:
+            data['commandlineargs'] = self._input_data_dict
 
         logutils.write_task_start_json(outdir=self._outdir,
                                        start_time=self._start_time,
                                        version=cellmaps_coembedding.__version__,
                                        data=data)
 
-    def _create_run_crate(self):
+    def _create_rocrate(self):
         """
         Creates rocrate for output directory
 
         :raises CellMapsProvenanceError: If there is an error
         """
-        # TODO: If organization or project name is unset need to pull from input rocrate
-        org_name = self._organization_name
-        if org_name is None:
-            org_name = 'TODO BETTER SET THIS via input rocrate'
+        name_set = set()
+        proj_set = set()
+        org_set = set()
+        for entry in self._inputdirs:
+            name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(entry)
+            name_set.add(name)
+            proj_set.add(proj_name)
+            org_set.add(org_name)
 
-        proj_name = self._project_name
-        if proj_name is None:
-            proj_name = 'TODO BETTER SET THIS via input rocrate'
+        name = '|'.join(list(name_set))
+        proj_name = '|'.join(list(proj_set))
+        org_name = '|'.join(list(org_set))
+
+        if self._name is not None:
+            name = self._name
+
+        if self._organization_name is not None:
+            org_name = self._organization_name
+
+        if self._project_name is not None:
+            proj_name = self._project_name
         try:
             self._provenance_utils.register_rocrate(self._outdir,
-                                                    name='cellmaps_coembedding',
+                                                    name=name,
                                                     organization_name=org_name,
                                                     project_name=proj_name)
         except TypeError as te:
@@ -293,7 +310,7 @@ class CellmapsCoEmbedder(object):
         :raises CellMapsImageEmbeddingError: If fairscape call fails
         """
         self._softwareid = self._provenance_utils.register_software(self._outdir,
-                                                                    name=self._name,
+                                                                    name=cellmaps_coembedding.__name__,
                                                                     description=cellmaps_coembedding.__description__,
                                                                     author=cellmaps_coembedding.__author__,
                                                                     version=cellmaps_coembedding.__version__,
@@ -305,14 +322,41 @@ class CellmapsCoEmbedder(object):
         # Todo: added inused dataset, software and what is being generated
         :return:
         """
+        logger.debug('Getting id of input rocrate')
+        used_dataset = []
+        for entry in self._inputdirs:
+            used_dataset.append(self._provenance_utils.get_id_of_rocrate(entry))
         self._provenance_utils.register_computation(self._outdir,
                                                     name=cellmaps_coembedding.__name__ + ' computation',
                                                     run_by=str(os.getlogin()),
                                                     command=str(self._input_data_dict),
                                                     description='run of ' + cellmaps_coembedding.__name__,
-                                                    used_software=[self._softwareid])
-                                                    #used_dataset=[self._unique_datasetid, self._samples_datasetid],
-                                                    #generated=[self._image_gene_attrid])
+                                                    used_software=[self._softwareid],
+                                                    used_dataset=used_dataset,
+                                                    generated=[self._coembedding_id])
+
+    def _register_image_coembedding_file(self):
+        """
+        Registers coembedding file with create as a dataset
+
+        """
+        data_dict = {'name': os.path.basename(self.get_coembedding_file()) + ' coembedding output file',
+                     'description': 'CoEmbedding file',
+                     'data-format': 'tsv',
+                     'author': cellmaps_coembedding.__name__,
+                     'version': cellmaps_coembedding.__version__,
+                     'date-published': date.today().strftime('%m-%d-%Y')}
+        self._coembedding_id = self._provenance_utils.register_dataset(self._outdir,
+                                                                       source_file=self.get_coembedding_file(),
+                                                                       data_dict=data_dict,
+                                                                       skip_copy=True)
+
+    def get_coembedding_file(self):
+        """
+        Gets image embedding file
+        :return:
+        """
+        return os.path.join(self._outdir, constants.CO_EMBEDDING_FILE)
 
     def run(self):
         """
@@ -335,12 +379,8 @@ class CellmapsCoEmbedder(object):
                                           handlerprefix='cellmaps_coembedding')
                 self._write_task_start_json()
 
-            self._create_run_crate()
-
-            # Todo: uncomment when fixed
-            # register software fails due to this bug:
-            # https://github.com/fairscape/fairscape-cli/issues/7
-            # self._register_software()
+            self._create_rocrate()
+            self._register_software()
 
             # generate result
             with open(os.path.join(self._outdir, constants.CO_EMBEDDING_FILE), 'w') as f:
@@ -351,10 +391,9 @@ class CellmapsCoEmbedder(object):
                 for row in self._embedding_generator.get_next_embedding():
                     writer.writerow(row)
 
-            # Todo: uncomment when above work
-            # Above registrations need to work for this to work
-            # register computation
-            # self._register_computation()
+            self._register_image_coembedding_file()
+
+            self._register_computation()
 
             """
             imgdim = 1024  # input dim of image
@@ -413,4 +452,5 @@ class CellmapsCoEmbedder(object):
                                                 start_time=self._start_time,
                                                 end_time=self._end_time,
                                                 status=exitcode)
+        logger.debug('Exit code: ' + str(exitcode))
         return exitcode

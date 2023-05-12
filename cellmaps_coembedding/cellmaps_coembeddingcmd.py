@@ -88,8 +88,10 @@ def main(args):
                                        image_embeddingdir=theargs.image_embeddingdir,
                                        image_downloaddir=theargs.image_downloaddir)
         return CellmapsCoEmbedder(outdir=theargs.outdir,
+                                  inputdirs=[theargs.image_embeddingdir, theargs.ppi_embeddingdir,
+                                             theargs.image_downloaddir],
                                   embedding_generator=gen,
-                                  misc_info_dict=theargs.__dict__).run()
+                                  input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
