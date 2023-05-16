@@ -23,7 +23,8 @@ requirements = ['cellmaps_utils',
                 'numpy',
                 'torch',
                 'pandas',
-                'matplotlib']
+                'matplotlib',
+                'dill']
 
 setup_requirements = [ ]
 

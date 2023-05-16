@@ -6,6 +6,10 @@ import random
 import logging
 import time
 from datetime import date
+import pandas as pd
+import numpy as np
+import dill
+import sys
 
 from cellmaps_utils import constants
 from cellmaps_utils import logutils
@@ -79,50 +83,53 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
-    def __init__(self, dimensions=1024):
-        """
-        Constructor
-        """
-        self._dimensions = dimensions
-
-    def get_dimensions(self):
-        """
-        Gets number of dimensions this embedding will generate
-
-        :return: number of dimensions aka vector length
-        :rtype: int
-        """
-        return self._dimensions
-
-    def get_next_embedding(self):
-        """
-        Generator method for getting next embedding.
-        Caller should implement with ``yield`` operator
-
-        :raises: NotImplementedError: Subclasses should implement this
-        :return: Embedding
-        :rtype: list
-        """
-        raise NotImplementedError('Subclasses should implement')
-
-
-class FakeCoEmbeddingGenerator(EmbeddingGenerator):
-    """
-    Generates a fake coembedding
-    """
-    def __init__(self, dimensions=128, ppi_embeddingdir=None,
+    def __init__(self, dimensions=1024,
+                 ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  image_downloaddir=None,
                  img_emd_translator=None):
         """
         Constructor
-        :param dimensions:
         """
-        super().__init__(dimensions=dimensions)
+        self._dimensions = dimensions
         if img_emd_translator is None:
             self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=image_downloaddir)
         self._ppi_embeddingdir = ppi_embeddingdir
         self._image_embeddingdir = image_embeddingdir
+
+    def _get_ppi_embeddings_file(self):
+        """
+
+        :return:
+        """
+        return os.path.join(self._ppi_embeddingdir,
+                            constants.PPI_EMBEDDING_FILE)
+
+    def _get_ppi_embeddings(self):
+        """
+        Gets PPI embedding from ppi embedding directory set via input
+
+        :return: embeddings
+        :rtype: list
+        """
+        return self._get_embedding(self._get_ppi_embeddings_file())
+
+    def _get_image_embeddings_file(self):
+        """
+
+        :return:
+        """
+        return os.path.join(self._image_embeddingdir,
+                            constants.IMAGE_EMBEDDING_FILE)
+
+    def _get_image_embeddings(self):
+        """
+        Gets PPI embedding from ppi embedding directory set via input
+
+        :return: embeddings
+        :rtype: list
+        """
+        return self._get_embedding(self._get_image_embeddings_file())
 
     def _get_set_of_embedding_names(self, embedding):
         """
@@ -153,27 +160,137 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
                 embeddings.append(row)
         return embeddings
 
-    def _get_ppi_embeddings(self):
+    def get_dimensions(self):
         """
-        Gets PPI embedding from ppi embedding directory set via input
+        Gets number of dimensions this embedding will generate
 
-        :return: embeddings
+        :return: number of dimensions aka vector length
+        :rtype: int
+        """
+        return self._dimensions
+
+    def get_name_mapping(self):
+        """
+
+        :return:
+        """
+        return self._img_emd_translator.get_oldname_to_new_name_mapping()
+
+    def get_next_embedding(self):
+        """
+        Generator method for getting next embedding.
+        Caller should implement with ``yield`` operator
+
+        :raises: NotImplementedError: Subclasses should implement this
+        :return: Embedding
         :rtype: list
         """
-        # Todo: put ppi_emd.tsv into constants of cellmaps_utils
-        return self._get_embedding(os.path.join(self._ppi_embeddingdir,
-                                                constants.PPI_EMBEDDING_FILE))
+        raise NotImplementedError('Subclasses should implement')
 
-    def _get_image_embeddings(self):
-        """
-        Gets PPI embedding from ppi embedding directory set via input
 
-        :return: embeddings
-        :rtype: list
+class MuseCoEmbeddingGenerator(EmbeddingGenerator):
+    """
+    Generats co-embedding using MUSE
+    """
+    def __init__(self, dimensions=128,
+                 outdir=None,
+                 ppi_embeddingdir=None,
+                 image_embeddingdir=None,
+                 image_downloaddir=None,
+                 img_emd_translator=None):
         """
-        # Todo: put image_emd.tsv into constants of cellmaps_utils
-        return self._get_embedding(os.path.join(self._image_embeddingdir,
-                                                constants.IMAGE_EMBEDDING_FILE))
+        Constructor
+        :param dimensions:
+        """
+        super().__init__(dimensions=dimensions,
+                         ppi_embeddingdir=ppi_embeddingdir,
+                         image_embeddingdir=image_embeddingdir,
+                         image_downloaddir=image_downloaddir,
+                         img_emd_translator=img_emd_translator)
+        self._outdir = outdir
+
+    def get_next_embedding(self):
+        """
+
+        :return:
+        """
+        ppi_embeddings = self._get_ppi_embeddings()
+        logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
+        raw_embeddings = self._get_image_embeddings()
+        logger.info('There are ' + str(len(raw_embeddings)) + ' raw image embeddings')
+
+        image_embeddings = self._img_emd_translator.translate(raw_embeddings)
+        logger.info('There are ' + str(len(image_embeddings)) +
+                    ' translated and filtered image embeddings')
+
+        ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
+        image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
+        intersection_embedding_names = ppi_embedding_names.intersection(image_embedding_names)
+        logger.info('There are ' +
+                    str(len(intersection_embedding_names)) +
+                    ' overlapping embeddings')
+
+        image_features = pd.read_table(self._get_image_embeddings_file(),
+                                       sep='\t', index_col=0)
+        # Todo image_features needs to be fixed cause the names of the rows are HPA samples and NOT
+        # gene names, this needs to be converted and duplicates need to be removed
+        # Todo need to turn the image_embeddings and ppi_embeddings into numpy.ndarrays where
+        # the gene names are in same index, but omitted from the array
+
+        ppi_features = pd.read_table(self._get_ppi_embeddings_file(),
+                                     sep='\t', index_col=0)
+
+        overlapping_proteins = list(set(image_features.index.values).intersection(set(ppi_features.index.values)))
+
+        image_features = image_features.loc[overlapping_proteins]
+        image_features.to_csv(os.path.join(self._outdir, 'overlap_image_features.tsv'), sep='\t')
+        ppi_features = ppi_features.loc[overlapping_proteins]
+        ppi_features.to_csv(os.path.join(self._outdir, 'overlap_ppi_features.tsv'), sep='\t')
+
+        imgdim = 1024  # input dim of image
+        ppidim = 1024  # input dim of ppi
+        latent_dim = 128  # output dim of music embedding
+        k = 10  # k nearest neighbors value used for clustering - clustering used for triplet loss
+        min_diff = 0.2  # margin for triplet loss
+        dropout = 0.25  # dropout between neural net layers
+        n_epochs = 500  # training epochs
+        lambda_regul = 5  # weight for regularization term in loss
+        lambda_super = 5  # weight for triplet loss term in loss
+
+        resultsdir = os.path.join(self._outdir, 'muse')
+        print('XXXXXXXXX\n\n\n\n')
+        print(ppi_features.values)
+        print(type(ppi_features.values))
+        print(ppi_features.values.shape)
+        print('YYYYYYYY\n\n\n\n')
+        muse.muse_fit_predict(resultsdir=resultsdir,
+                              index=overlapping_proteins, data_x=ppi_features.values,
+                              data_y=image_features.values,
+                              latent_dim=latent_dim,
+                              n_epochs=n_epochs,
+                              min_diff=min_diff,
+                              k=k, dropout=dropout)
+
+        yield None
+
+
+class FakeCoEmbeddingGenerator(EmbeddingGenerator):
+    """
+    Generates a fake coembedding
+    """
+    def __init__(self, dimensions=128, ppi_embeddingdir=None,
+                 image_embeddingdir=None,
+                 image_downloaddir=None,
+                 img_emd_translator=None):
+        """
+        Constructor
+        :param dimensions:
+        """
+        super().__init__(dimensions=dimensions)
+        if img_emd_translator is None:
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=image_downloaddir)
+        self._ppi_embeddingdir = ppi_embeddingdir
+        self._image_embeddingdir = image_embeddingdir
 
     def get_next_embedding(self):
         """
@@ -200,13 +317,6 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
             row = [embed_name]
             row.extend([random.random() for x in range(0, self.get_dimensions())])
             yield row
-
-    def get_name_mapping(self):
-        """
-
-        :return:
-        """
-        return self._img_emd_translator.get_oldname_to_new_name_mapping()
 
 
 class CellmapsCoEmbedder(object):
@@ -395,54 +505,6 @@ class CellmapsCoEmbedder(object):
 
             self._register_computation()
 
-            """
-            imgdim = 1024  # input dim of image
-            ppidim = 1024  # input dim of ppi
-            latent_dim = 128  # output dim of music embedding
-            k = 10  # k nearest neighbors value used for clustering - clustering used for triplet loss
-            min_diff = 0.2  # margin for triplet loss
-            dropout = 0.25  # dropout between neural net layers
-            n_epochs = 500  # training epochs
-            lambda_regul = 5  # weight for regularization term in loss
-            lambda_super = 5  # weight for triplet loss term in loss
-
-            os.makedirs(os.path.join(self._outdir, 'muse'), mode=0o755)
-            # TODO: Fix this
-
-
-            muse.muse_fit_predict(resultsdir=os.path.join(self._outdir, 'muse', 'result'),
-                                  index=overlapping_proteins, data_x=ppi_features.values,
-                                  data_y=image_features.values,
-                                  latent_dim=latent_dim,
-                                  n_epochs=n_epochs,
-                                  min_diff=min_diff,
-                                  k=k, dropout=dropout)
-
-            
-            uniq_genes = set()
-            with open(self._image_embedding, 'r') as f:
-                reader = csv.reader(f, delimiter='\t')
-                for row in reader:
-                    uniq_genes.add(row[0])
-
-            with open(self._apms_embedding, 'r') as f:
-                reader = csv.reader(f, delimiter='\t')
-                for row in reader:
-                    uniq_genes.add(row[0])
-            with open(os.path.join(self._outdir, 'music_edgelist.tsv'), 'w') as f:
-
-                f.write('\t'.join(['GeneA', 'GeneB', 'Weight']) + '\n')
-                for genea in uniq_genes:
-                    if len(genea) == 0:
-                        continue
-                    for geneb in uniq_genes:
-                        if len(geneb) == 0:
-                            continue
-                        if genea == geneb:
-                            continue
-                        f.write(str(genea) + '\t' + str(geneb) + '\t' +
-                                str(random.random()) + '\n')
-            """
             exitcode = 0
         finally:
             self._end_time = int(time.time())

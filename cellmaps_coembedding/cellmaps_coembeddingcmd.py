@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
+import os
 import sys
 import logging
 import logging.config
@@ -8,6 +9,7 @@ import logging.config
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_coembedding
+from cellmaps_coembedding.runner import MuseCoEmbeddingGenerator
 from cellmaps_coembedding.runner import FakeCoEmbeddingGenerator
 from cellmaps_coembedding.runner import CellmapsCoEmbedder
 
@@ -40,6 +42,8 @@ def _parse_arguments(desc, args):
                              'file resides')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
+    parser.add_argument('--fake_embedding', action='store_true',
+                        help='If set, generate fake coembeddings')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -83,10 +87,17 @@ def main(args):
 
     try:
         logutils.setup_cmd_logging(theargs)
-        gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
-                                       ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                       image_embeddingdir=theargs.image_embeddingdir,
-                                       image_downloaddir=theargs.image_downloaddir)
+        if theargs.fake_embedding:
+            gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                           ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                           image_embeddingdir=theargs.image_embeddingdir,
+                                           image_downloaddir=theargs.image_downloaddir)
+        else:
+            gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                           outdir=os.path.abspath(theargs.outdir),
+                                           ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                           image_embeddingdir=theargs.image_embeddingdir,
+                                           image_downloaddir=theargs.image_downloaddir)
         return CellmapsCoEmbedder(outdir=theargs.outdir,
                                   inputdirs=[theargs.image_embeddingdir, theargs.ppi_embeddingdir,
                                              theargs.image_downloaddir],
