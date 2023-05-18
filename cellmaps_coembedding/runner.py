@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import dill
 import sys
-
+from tqdm import tqdm
 from cellmaps_utils import constants
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -193,14 +193,26 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     Generats co-embedding using MUSE
     """
     def __init__(self, dimensions=128,
+                 k=10, min_diff=0.2, dropout=0.25, n_epochs=500,
+                 n_epochs_init=200,
                  outdir=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  image_downloaddir=None,
                  img_emd_translator=None):
         """
-        Constructor
+
         :param dimensions:
+        :param k: k nearest neighbors value used for clustering - clustering used for triplet loss
+        :param min_diff: margin for triplet loss
+        :param dropout: dropout between neural net layers
+        :param n_epochs: training epochs
+        :param n_epochs_init: initialization training epochs
+        :param outdir:
+        :param ppi_embeddingdir:
+        :param image_embeddingdir:
+        :param image_downloaddir:
+        :param img_emd_translator:
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -208,6 +220,11 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                          image_downloaddir=image_downloaddir,
                          img_emd_translator=img_emd_translator)
         self._outdir = outdir
+        self._k = k
+        self._min_diff = min_diff
+        self._dropout = dropout
+        self._n_epochs = n_epochs
+        self._n_epochs_init = n_epochs_init
 
     def get_next_embedding(self):
         """
@@ -215,6 +232,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         :return:
         """
         ppi_embeddings = self._get_ppi_embeddings()
+        ppi_embeddings.sort(key=lambda x: x[0])
         logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
         raw_embeddings = self._get_image_embeddings()
         logger.info('There are ' + str(len(raw_embeddings)) + ' raw image embeddings')
@@ -222,56 +240,33 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         image_embeddings = self._img_emd_translator.translate(raw_embeddings)
         logger.info('There are ' + str(len(image_embeddings)) +
                     ' translated and filtered image embeddings')
-
-        ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
-        image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
-        intersection_embedding_names = ppi_embedding_names.intersection(image_embedding_names)
+        image_embeddings.sort(key=lambda x: x[0])
+        ppi_name_set = self._get_set_of_embedding_names(ppi_embeddings)
+        image_name_set = self._get_set_of_embedding_names(image_embeddings)
+        intersection_name_set = ppi_name_set.intersection(image_name_set)
         logger.info('There are ' +
-                    str(len(intersection_embedding_names)) +
+                    str(len(intersection_name_set)) +
                     ' overlapping embeddings')
 
-        image_features = pd.read_table(self._get_image_embeddings_file(),
-                                       sep='\t', index_col=0)
-        # Todo image_features needs to be fixed cause the names of the rows are HPA samples and NOT
-        # gene names, this needs to be converted and duplicates need to be removed
-        # Todo need to turn the image_embeddings and ppi_embeddings into numpy.ndarrays where
-        # the gene names are in same index, but omitted from the array
+        name_index = [x[0] for x in ppi_embeddings if x[0] in intersection_name_set]
 
-        ppi_features = pd.read_table(self._get_ppi_embeddings_file(),
-                                     sep='\t', index_col=0)
-
-        overlapping_proteins = list(set(image_features.index.values).intersection(set(ppi_features.index.values)))
-
-        image_features = image_features.loc[overlapping_proteins]
-        image_features.to_csv(os.path.join(self._outdir, 'overlap_image_features.tsv'), sep='\t')
-        ppi_features = ppi_features.loc[overlapping_proteins]
-        ppi_features.to_csv(os.path.join(self._outdir, 'overlap_ppi_features.tsv'), sep='\t')
-
-        imgdim = 1024  # input dim of image
-        ppidim = 1024  # input dim of ppi
-        latent_dim = 128  # output dim of music embedding
-        k = 10  # k nearest neighbors value used for clustering - clustering used for triplet loss
-        min_diff = 0.2  # margin for triplet loss
-        dropout = 0.25  # dropout between neural net layers
-        n_epochs = 500  # training epochs
-        lambda_regul = 5  # weight for regularization term in loss
-        lambda_super = 5  # weight for triplet loss term in loss
+        ppi_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in ppi_embeddings if xi[0] in intersection_name_set])
+        image_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
 
         resultsdir = os.path.join(self._outdir, 'muse')
-        print('XXXXXXXXX\n\n\n\n')
-        print(ppi_features.values)
-        print(type(ppi_features.values))
-        print(ppi_features.values.shape)
-        print('YYYYYYYY\n\n\n\n')
-        muse.muse_fit_predict(resultsdir=resultsdir,
-                              index=overlapping_proteins, data_x=ppi_features.values,
-                              data_y=image_features.values,
-                              latent_dim=latent_dim,
-                              n_epochs=n_epochs,
-                              min_diff=min_diff,
-                              k=k, dropout=dropout)
 
-        yield None
+        model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
+                                                     index=name_index, data_x=ppi_embeddings_array,
+                                                     data_y=image_embeddings_array,
+                                                     latent_dim=self.get_dimensions(),
+                                                     n_epochs=self._n_epochs,
+                                                     n_epochs_init=self._n_epochs_init,
+                                                     min_diff=self._min_diff,
+                                                     k=self._k, dropout=self._dropout)
+        for index, embedding in enumerate(res_embedings):
+            row = [name_index[index]]
+            row.extend(embedding)
+            yield row
 
 
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
@@ -493,12 +488,12 @@ class CellmapsCoEmbedder(object):
             self._register_software()
 
             # generate result
-            with open(os.path.join(self._outdir, constants.CO_EMBEDDING_FILE), 'w') as f:
+            with open(os.path.join(self._outdir, constants.CO_EMBEDDING_FILE), 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 header_line = ['']
                 header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
                 writer.writerow(header_line)
-                for row in self._embedding_generator.get_next_embedding():
+                for row in tqdm(self._embedding_generator.get_next_embedding(), desc='Saving embedding'):
                     writer.writerow(row)
 
             self._register_image_coembedding_file()

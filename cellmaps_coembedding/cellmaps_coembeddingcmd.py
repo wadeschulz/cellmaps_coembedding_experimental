@@ -42,6 +42,11 @@ def _parse_arguments(desc, args):
                              'file resides')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
+    parser.add_argument('--n_epochs_init', default=200, type=int,
+                        help='# of init training epochs')
+    parser.add_argument('--n_epochs', default=500, type=int,
+                        help='# of training epochs')
+
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--logconf', default=None,
@@ -94,6 +99,8 @@ def main(args):
                                            image_downloaddir=theargs.image_downloaddir)
         else:
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                           n_epochs=theargs.n_epochs,
+                                           n_epochs_init=theargs.n_epochs_init,
                                            outdir=os.path.abspath(theargs.outdir),
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
                                            image_embeddingdir=theargs.image_embeddingdir,

@@ -1,5 +1,6 @@
 from .architecture import structured_embedding
 
+from tqdm import tqdm
 import phenograph
 import torch
 import torch.optim as optim
@@ -111,17 +112,19 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
         % (epoch, np.mean(L_totals), np.mean(L_reconstruction_xs), np.mean(L_reconstruction_ys), np.mean(L_weights), np.mean(L_trip_batch_hard_xs), np.mean(L_trip_batch_hard_ys), np.mean(L_trip_batch_all_xs), np.mean(L_trip_batch_all_ys), np.mean(fraction_hard_xs), np.mean(fraction_hard_ys),  np.mean(fraction_semi_xs), np.mean(fraction_semi_ys), np.mean(fraction_easy_xs), np.mean(fraction_easy_ys)), file = sourceFile)    
     
 
-    
-    
 def muse_fit_predict(resultsdir, index, data_x,
                      data_y,
-                     label_x = [],
-                     label_y = [],
+                     label_x=[],
+                     label_y=[],
                      batch_size=64,
                      latent_dim=100,
                      n_epochs=500,
                      lambda_regul=5,
-                     lambda_super=5, min_diff=0.2, hard_loss=False, squared=False, batch_norm=False, l2_norm = False, save_update_epochs=False, semi=False, k=30, dropout=0.25, euc=False):
+                     lambda_super=5,
+                     min_diff=0.2, hard_loss=False, squared=False,
+                     batch_norm=False, l2_norm = False, save_update_epochs=False,
+                     semi=False, k=30, dropout=0.25, euc=False,
+                     n_epochs_init=200):
     """
         MUSE model fitting and predicting:
           This function is used to train the MUSE model on multi-modality data
@@ -155,8 +158,6 @@ def muse_fit_predict(resultsdir, index, data_x,
     # parameter setting for neural network
     n_hidden = 128  # number of hidden node in neural network
     learn_rate = 1e-4  # learning rate in the optimization
-    batch_size = 64  # number of cells in the training batch
-    n_epochs_init = 200
     cluster_update_epoch = 50
     sourceFile = open('{}.txt'.format(resultsdir), 'w')
     
@@ -219,12 +220,13 @@ def muse_fit_predict(resultsdir, index, data_x,
     train_loader = DataLoader(Protein_Dataset(data_x, data_y), batch_size=batch_size, shuffle=True)
 
      #INIT WITH JUST RECONSTRUCTION
-    for epoch in range(n_epochs_init):
+    for epoch in tqdm(range(n_epochs_init), desc='Init with just '
+                                                 'reconstruction'):
         model.train()
         train_model(model, optimizer, train_loader, label_x, label_y, epoch, 0, 'init_recon', True, semi, device)
         
   #  INIT WITH TRIPLET LOSS AND RECONSTRUCTION, ORIGINAL LABELS
-    for epoch in range(n_epochs_init):
+    for epoch in tqdm(range(n_epochs_init), desc='Init with triplet loss, recon & orig labels'):
         model.train()
         train_model(model, optimizer, train_loader, label_x, label_y, epoch, lambda_super, 'init_both', True, semi, device)
 
@@ -240,7 +242,7 @@ def muse_fit_predict(resultsdir, index, data_x,
         update_label_y = transform(make_matrix_from_labels(update_label_y)).to(device)
     
     # TRAIN WITH LABELS
-    for epoch in range(n_epochs):
+    for epoch in tqdm(range(n_epochs), desc='Train with labels'):
         model.train()
         train_model(model, optimizer, train_loader, update_label_x, update_label_y, epoch, lambda_super, 'train', True, semi, device)
         
@@ -269,12 +271,13 @@ def muse_fit_predict(resultsdir, index, data_x,
     model.eval()
     with torch.no_grad():
         latent, reconstruct_x, reconstruct_y, latent_x, latent_y = model(data_x, data_y)
-    
+
+    detached_embeddings = latent.detach().cpu().numpy()
     torch.save(model.state_dict(), '{}.pth'.format(resultsdir))
-    pd.DataFrame(latent.detach().cpu().numpy(), index = index).to_csv('{}_latent.txt'.format(resultsdir))
+    pd.DataFrame(detached_embeddings, index = index).to_csv('{}_latent.txt'.format(resultsdir))
     pd.DataFrame(reconstruct_x.detach().cpu().numpy(), index = index).to_csv('{}_reconstruct_x.txt'.format(resultsdir))
     pd.DataFrame(reconstruct_y.detach().cpu().numpy(), index = index).to_csv('{}_reconstruct_y.txt'.format(resultsdir))
     pd.DataFrame(latent_x.detach().cpu().numpy(), index = index).to_csv('{}_latent_x.txt'.format(resultsdir))
     pd.DataFrame(latent_y.detach().cpu().numpy(), index = index).to_csv('{}_latent_y.txt'.format(resultsdir))
     
-    return model
+    return model, detached_embeddings

@@ -24,7 +24,8 @@ requirements = ['cellmaps_utils',
                 'torch',
                 'pandas',
                 'matplotlib',
-                'dill']
+                'dill',
+                'tqdm']
 
 setup_requirements = [ ]
 
