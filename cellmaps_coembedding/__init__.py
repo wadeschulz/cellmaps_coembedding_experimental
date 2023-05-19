@@ -2,7 +2,7 @@
 
 """Top-level package for CM4AI Generate PPI."""
 
-__author__ = """Leah Schaffer"""
+__author__ = 'Leah Schaffer'
 __email__ = 'lvschaffer@health.ucsd.edu'
 __version__ = '0.1.0a1'
 __repo_url__ = 'https://github.com/idekerlab/cellmaps_coembedding'
