@@ -20,6 +20,7 @@ PPI_EMBEDDINGDIR='--ppi_embeddingdir'
 IMAGE_EMBEDDINGDIR='--image_embeddingdir'
 IMAGE_DOWNLOADDIR='--image_downloaddir'
 
+
 def _parse_arguments(desc, args):
     """
     Parses command line arguments
