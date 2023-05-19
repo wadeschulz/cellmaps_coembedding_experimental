@@ -16,6 +16,10 @@ from cellmaps_coembedding.runner import CellmapsCoEmbedder
 logger = logging.getLogger(__name__)
 
 
+PPI_EMBEDDINGDIR='--ppi_embeddingdir'
+IMAGE_EMBEDDINGDIR='--image_embeddingdir'
+IMAGE_DOWNLOADDIR='--image_downloaddir'
+
 def _parse_arguments(desc, args):
     """
     Parses command line arguments
@@ -30,13 +34,13 @@ def _parse_arguments(desc, args):
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--ppi_embeddingdir', required=True,
+    parser.add_argument(PPI_EMBEDDINGDIR, required=True,
                         help='Directory aka rocrate where ppi '
                              'embedding file resides')
-    parser.add_argument('--image_embeddingdir', required=True,
+    parser.add_argument(IMAGE_EMBEDDINGDIR, required=True,
                         help='Directory aka rocrate image embedding '
                              'file resides')
-    parser.add_argument('--image_downloaddir', required=True,
+    parser.add_argument(IMAGE_DOWNLOADDIR, required=True,
                         help='Directory containing image download data or'
                              'more specifically rocrate where '
                              'file resides')
@@ -83,9 +87,47 @@ def main(args):
     desc = """
     Version {version}
 
-    Invokes run() method on CellmapsCoEmbedder
+    Given image and PPI embeddings, this tool generates a co-embedding using 
+    a variant of MuSE algorithm within this code base from 
+    Feng Bao @ Altschuler & Wu Lab @ UCSF 2022
+    that is under MIT License.
+    
+    To run this tool requires that an output directory be specified and these
+    flags be set.
+    
+    {ppi_embeddingdir} should be set to a directory path created by
+                       cellmaps_ppi_embedding which has a {ppi_embedding_file} file
+                       containing the tab delimited embeddings of the PPI network.
+                       For each row, first value is assumed to be the gene symbol 
+                       followed by the embeddings separated by tabs. The first 
+                       row is assumed to be a header
+                       
+    {image_embeddingdir} should be set to a directory path created by
+                       cellmaps_image_embedding which has a {image_embedding_file} file
+                       containing the tab delimited embeddings of the IF images
+                       For each row, first value is assumed to be sample ID followed
+                       by the embeddings separated by tabs. The first row
+                       is assumed to be a header.
+                       
+    {image_downloaddir} should be set to a directory path created by
+                       cellmaps_imagedownloader which has a {image_gene_node_attr_file}
+                       file containing tab delimited data with following header line:
+                       name    represents      ambiguous       antibody        filename
+                       
+                       name = Gene Symbol
+                       represents = Ensemble ID
+                       ambiguous = Gene Symbols that map to same antibody delimited by comma
+                       antibody = Antibody for Gene Symbol
+                       filename = sample IDs delimited by comma for given antibody & Gene
+                       
 
-    """.format(version=cellmaps_coembedding.__version__)
+    """.format(version=cellmaps_coembedding.__version__,
+               ppi_embeddingdir=PPI_EMBEDDINGDIR,
+               image_embeddingdir=IMAGE_EMBEDDINGDIR,
+               image_downloaddir=IMAGE_DOWNLOADDIR,
+               ppi_embedding_file=constants.PPI_EMBEDDING_FILE,
+               image_embedding_file=constants.IMAGE_EMBEDDING_FILE,
+               image_gene_node_attr_file=constants.IMAGE_GENE_NODE_ATTR_FILE)
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
