@@ -13,10 +13,7 @@ CM4AI CoEmbedding
         :target: https://cellmaps-generate-ppi.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package with command line
+A tool to generate coembeddings from IF image embeddings and PPI network embeddings
 
 
 * Free software: MIT license
@@ -27,12 +24,20 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 Dependencies
 ------------
 
-* TODO add
+* `cellmaps_utils <https://pypi.org/project/cellmaps-utils>`__
+* `phenograph <https://pypi.org/project/phenograph>`__
+* `numpy <https://pypi.org/project/numpy>`__
+* `torch <https://pypi.org/project/torch>`__
+* `pandas <https://pypi.org/project/pandas>`__
+* `matplotlib <https://pypi.org/project/matplotlib>`__
+* `dill <https://pypi.org/project/dill>`__
+* `tqdm <https://pypi.org/project/tqdm>`__
+
 
 Compatibility
 -------------
 
-* Python 3.3+
+* Python 3.8+
 
 Installation
 ------------
