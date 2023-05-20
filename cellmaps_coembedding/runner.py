@@ -281,11 +281,11 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         Constructor
         :param dimensions:
         """
-        super().__init__(dimensions=dimensions)
-        if img_emd_translator is None:
-            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=image_downloaddir)
-        self._ppi_embeddingdir = ppi_embeddingdir
-        self._image_embeddingdir = image_embeddingdir
+        super().__init__(dimensions=dimensions,
+                         ppi_embeddingdir=ppi_embeddingdir,
+                         image_embeddingdir=image_embeddingdir,
+                         image_downloaddir=image_downloaddir,
+                         img_emd_translator=img_emd_translator)
 
     def get_next_embedding(self):
         """
