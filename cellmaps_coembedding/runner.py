@@ -433,7 +433,7 @@ class CellmapsCoEmbedder(object):
             used_dataset.append(self._provenance_utils.get_id_of_rocrate(entry))
         self._provenance_utils.register_computation(self._outdir,
                                                     name=cellmaps_coembedding.__name__ + ' computation',
-                                                    run_by=str(os.getlogin()),
+                                                    run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
                                                     description='run of ' + cellmaps_coembedding.__name__,
                                                     used_software=[self._softwareid],
