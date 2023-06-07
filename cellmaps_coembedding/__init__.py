@@ -2,8 +2,8 @@
 
 """Top-level package for CM4AI Generate PPI."""
 
-__author__ = 'Leah Schaffer'
-__email__ = 'lvschaffer@health.ucsd.edu'
+__author__ = 'Ideker Lab CM4AI team'
+__email__ = 'tools@cm4ai.org'
 __version__ = '0.1.0a3'
 __repo_url__ = 'https://github.com/idekerlab/cellmaps_coembedding'
 __description__ = 'A tool to generate coembeddings from IF image embeddings and PPI network embeddings'
