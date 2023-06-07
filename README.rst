@@ -47,7 +47,7 @@ Installation
    git clone https://github.com/idekerlab/cellmaps_coembedding
    cd cellmaps_coembedding
    make dist
-   pip install dist/cellmaps_coembeddingcmd*whl
+   pip install dist/cellmaps_coembedding*whl
 
 
 Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
