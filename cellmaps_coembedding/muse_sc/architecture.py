@@ -4,7 +4,6 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-
 def cos_sim(A, B):
         cosine = np.dot(A,B)/(norm(A)*norm(B))
         return cosine
@@ -37,31 +36,35 @@ def init_weights_d(m):
         nn.init.normal_(m.weight.data)
             
 class structured_embedding(nn.Module):
-    def __init__(self, x_input_size, y_input_size, latent_dim, hidden_size, dropout, batch_norm, l2_norm):
+    def __init__(self, x_input_size, y_input_size, latent_dim, hidden_size, dropout, l2_norm):
         super().__init__()
                 
-        self.batch_norm = batch_norm 
         self.l2_norm = l2_norm
         
         self.encoder_x = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(x_input_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.ELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.Tanh())
     
         self.encoder_y = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(y_input_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.ELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_size, hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.Tanh())
         
         self.encoder_z = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(hidden_size + hidden_size, latent_dim))
+            nn.Linear(hidden_size + hidden_size, latent_dim),
+            nn.BatchNorm1d(latent_dim))
         
         self.decoder_h_x = nn.Linear(latent_dim, latent_dim, bias=False)
         self.decoder_h_y = nn.Linear(latent_dim, latent_dim, bias=False)
@@ -88,9 +91,7 @@ class structured_embedding(nn.Module):
         self.decoder_h_y.apply(init_weights_d)
         self.decoder_x.apply(init_weights)
         self.decoder_y.apply(init_weights)
-        
-        self.batchnorm = nn.BatchNorm1d(latent_dim)
-       
+               
     
     def forward(self, x, y):
         
@@ -117,3 +118,4 @@ class structured_embedding(nn.Module):
         
 
 
+         

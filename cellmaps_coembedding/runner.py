@@ -193,7 +193,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     Generats co-embedding using MUSE
     """
     def __init__(self, dimensions=128,
-                 k=10, min_diff=0.2, dropout=0.25, n_epochs=500,
+                 k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
                  n_epochs_init=200,
                  outdir=None,
                  ppi_embeddingdir=None,
@@ -204,7 +204,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
 
         :param dimensions:
         :param k: k nearest neighbors value used for clustering - clustering used for triplet loss
-        :param min_diff: margin for triplet loss
+        :param triplet_margin: margin for triplet loss
         :param dropout: dropout between neural net layers
         :param n_epochs: training epochs
         :param n_epochs_init: initialization training epochs
@@ -221,7 +221,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                          img_emd_translator=img_emd_translator)
         self._outdir = outdir
         self._k = k
-        self._min_diff = min_diff
+        self.triplet_margin = triplet_margin
         self._dropout = dropout
         self._n_epochs = n_epochs
         self._n_epochs_init = n_epochs_init
@@ -256,12 +256,13 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         resultsdir = os.path.join(self._outdir, 'muse')
 
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
-                                                     index=name_index, data_x=ppi_embeddings_array,
+                                                     data_x=ppi_embeddings_array,
                                                      data_y=image_embeddings_array,
+                                                     name_index=name_index, 
                                                      latent_dim=self.get_dimensions(),
                                                      n_epochs=self._n_epochs,
                                                      n_epochs_init=self._n_epochs_init,
-                                                     min_diff=self._min_diff,
+                                                     triplet_margin=self.triplet_margin,
                                                      k=self._k, dropout=self._dropout)
         for index, embedding in enumerate(res_embedings):
             row = [name_index[index]]
