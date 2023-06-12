@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 PPI_EMBEDDINGDIR='--ppi_embeddingdir'
 IMAGE_EMBEDDINGDIR='--image_embeddingdir'
-IMAGE_DOWNLOADDIR='--image_downloaddir'
-
 
 def _parse_arguments(desc, args):
     """
@@ -40,10 +38,6 @@ def _parse_arguments(desc, args):
                              'embedding file resides')
     parser.add_argument(IMAGE_EMBEDDINGDIR, required=True,
                         help='Directory aka rocrate image embedding '
-                             'file resides')
-    parser.add_argument(IMAGE_DOWNLOADDIR, required=True,
-                        help='Directory containing image download data or'
-                             'more specifically rocrate where '
                              'file resides')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
@@ -109,23 +103,10 @@ def main(args):
                        For each row, first value is assumed to be sample ID followed
                        by the embeddings separated by tabs. The first row
                        is assumed to be a header.
-                       
-    {image_downloaddir} should be set to a directory path created by
-                       cellmaps_imagedownloader which has a {image_gene_node_attr_file}
-                       file containing tab delimited data with following header line:
-                       name    represents      ambiguous       antibody        filename
-                       
-                       name = Gene Symbol
-                       represents = Ensemble ID
-                       ambiguous = Gene Symbols that map to same antibody delimited by comma
-                       antibody = Antibody for Gene Symbol
-                       filename = sample IDs delimited by comma for given antibody & Gene
-                       
 
     """.format(version=cellmaps_coembedding.__version__,
                ppi_embeddingdir=PPI_EMBEDDINGDIR,
                image_embeddingdir=IMAGE_EMBEDDINGDIR,
-               image_downloaddir=IMAGE_DOWNLOADDIR,
                ppi_embedding_file=constants.PPI_EMBEDDING_FILE,
                image_embedding_file=constants.IMAGE_EMBEDDING_FILE,
                image_gene_node_attr_file=constants.IMAGE_GENE_NODE_ATTR_FILE)
@@ -138,19 +119,16 @@ def main(args):
         if theargs.fake_embedding:
             gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir,
-                                           image_downloaddir=theargs.image_downloaddir)
+                                           image_embeddingdir=theargs.image_embeddingdir)
         else:
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            n_epochs=theargs.n_epochs,
                                            n_epochs_init=theargs.n_epochs_init,
                                            outdir=os.path.abspath(theargs.outdir),
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir,
-                                           image_downloaddir=theargs.image_downloaddir)
+                                           image_embeddingdir=theargs.image_embeddingdir)
         return CellmapsCoEmbedder(outdir=theargs.outdir,
-                                  inputdirs=[theargs.image_embeddingdir, theargs.ppi_embeddingdir,
-                                             theargs.image_downloaddir],
+                                  inputdirs=[theargs.image_embeddingdir, theargs.ppi_embeddingdir],
                                   embedding_generator=gen,
                                   input_data_dict=theargs.__dict__).run()
     except Exception as e:

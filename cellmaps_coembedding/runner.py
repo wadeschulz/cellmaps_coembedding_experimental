@@ -21,62 +21,6 @@ from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 logger = logging.getLogger(__name__)
 
 
-class ImageEmbeddingFilterAndNameTranslator(object):
-    """
-    Converts image embedding names and filters keeping only
-    one per gene
-
-    """
-
-    def __init__(self, image_downloaddir=None):
-        """
-        Constructor
-        """
-        self._id_to_gene_mapping = self._gen_filtered_mapping(os.path.join(image_downloaddir,
-                                                                           constants.IMAGE_GENE_NODE_ATTR_FILE))
-
-    def _gen_filtered_mapping(self, image_gene_node_attrs_file):
-        """
-        Reads TSV file
-
-        :param image_gene_node_attrs_file:
-        :return:
-        """
-        mapping_dict = {}
-        with open(image_gene_node_attrs_file, 'r') as f:
-            reader = csv.DictReader(f, delimiter='\t')
-            for row in reader:
-                mapping_dict[row['filename'].split(',')[0]] = row['name']
-        return mapping_dict
-
-    def get_name_mapping(self):
-        """
-        Gets mapping of old name to new name
-
-        :return: mapping of old name to new name
-        :rtype: dict
-        """
-        return self._id_to_gene_mapping
-
-    def translate(self, embeddings):
-        """
-        Translates and filters out embeddings
-        with duplicate gene names. Updated embeddings are returned
-        :param embeddings: list of list of embeddings
-        :type embeddings: list
-        :return: embeddings
-        :rtype: list
-        """
-        res_embeddings = []
-
-        for row in embeddings:
-            if row[0] not in self._id_to_gene_mapping:
-                continue
-            new_row = row.copy()
-            new_row[0] = self._id_to_gene_mapping[row[0]]
-            res_embeddings.append(new_row)
-        return res_embeddings
-
 
 class EmbeddingGenerator(object):
     """
@@ -86,14 +30,11 @@ class EmbeddingGenerator(object):
     def __init__(self, dimensions=1024,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
-                 image_downloaddir=None,
-                 img_emd_translator=None):
+                 ):
         """
         Constructor
         """
         self._dimensions = dimensions
-        if img_emd_translator is None:
-            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=image_downloaddir)
         self._ppi_embeddingdir = ppi_embeddingdir
         self._image_embeddingdir = image_embeddingdir
 
@@ -168,13 +109,7 @@ class EmbeddingGenerator(object):
         :rtype: int
         """
         return self._dimensions
-
-    def get_name_mapping(self):
-        """
-
-        :return:
-        """
-        return self._img_emd_translator.get_oldname_to_new_name_mapping()
+    
 
     def get_next_embedding(self):
         """
@@ -197,9 +132,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs_init=200,
                  outdir=None,
                  ppi_embeddingdir=None,
-                 image_embeddingdir=None,
-                 image_downloaddir=None,
-                 img_emd_translator=None):
+                 image_embeddingdir=None
+                ):
         """
 
         :param dimensions:
@@ -211,14 +145,10 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         :param outdir:
         :param ppi_embeddingdir:
         :param image_embeddingdir:
-        :param image_downloaddir:
-        :param img_emd_translator:
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
-                         image_embeddingdir=image_embeddingdir,
-                         image_downloaddir=image_downloaddir,
-                         img_emd_translator=img_emd_translator)
+                         image_embeddingdir=image_embeddingdir)
         self._outdir = outdir
         self._k = k
         self.triplet_margin = triplet_margin
@@ -234,12 +164,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         ppi_embeddings = self._get_ppi_embeddings()
         ppi_embeddings.sort(key=lambda x: x[0])
         logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
-        raw_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(raw_embeddings)) + ' raw image embeddings')
-
-        image_embeddings = self._img_emd_translator.translate(raw_embeddings)
-        logger.info('There are ' + str(len(image_embeddings)) +
-                    ' translated and filtered image embeddings')
+        image_embeddings = self._get_image_embeddings()
+        logger.info('There are ' + str(len(image_embeddings)) + ' image embeddings')
         image_embeddings.sort(key=lambda x: x[0])
         ppi_name_set = self._get_set_of_embedding_names(ppi_embeddings)
         image_name_set = self._get_set_of_embedding_names(image_embeddings)
@@ -275,18 +201,14 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     Generates a fake coembedding
     """
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
-                 image_embeddingdir=None,
-                 image_downloaddir=None,
-                 img_emd_translator=None):
+                 image_embeddingdir=None):
         """
         Constructor
         :param dimensions:
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
-                         image_embeddingdir=image_embeddingdir,
-                         image_downloaddir=image_downloaddir,
-                         img_emd_translator=img_emd_translator)
+                         image_embeddingdir=image_embeddingdir)
 
     def get_next_embedding(self):
         """
@@ -296,12 +218,8 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         """
         ppi_embeddings = self._get_ppi_embeddings()
         logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
-        raw_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(raw_embeddings)) + ' raw image embeddings')
-
-        image_embeddings = self._img_emd_translator.translate(raw_embeddings)
-        logger.info('There are ' + str(len(image_embeddings)) +
-                    ' translated and filtered image embeddings')
+        image_embeddings = self._get_image_embeddings()
+        logger.info('There are ' + str(len(image_embeddings)) + ' image embeddings')
 
         ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
         image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
