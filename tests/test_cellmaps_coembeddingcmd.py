@@ -26,9 +26,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                                                                '--ppi_embeddingdir',
                                                                'apms',
                                                                '--image_embeddingdir',
-                                                               'image',
-                                                               '--image_downloaddir',
-                                                               'download'])
+                                                               'image'])
 
         self.assertEqual(res.verbose, 0)
         self.assertEqual(res.logconf, None)
@@ -38,7 +36,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                     '--ppi_embeddingdir',
                     'apms',
                     '--image_embeddingdir',
-                    'image', '--image_downloaddir', 'download']
+                    'image']
         res = cellmaps_coembeddingcmd._parse_arguments('hi', someargs)
 
         self.assertEqual(2, res.verbose)
@@ -46,7 +44,6 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
         self.assertEqual('foo', res.outdir)
         self.assertEqual('apms', res.ppi_embeddingdir)
         self.assertEqual('image', res.image_embeddingdir)
-        self.assertEqual('download', res.image_downloaddir)
 
     def test_main(self):
         """Tests main function"""
@@ -55,13 +52,11 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
         try:
             temp_dir = tempfile.mkdtemp()
             res = cellmaps_coembeddingcmd.main(['myprog.py',
-                                                 'foo',
-                                                  '--ppi_embeddingdir',
-                                                  'apms',
-                                                  '--image_embeddingdir',
-                                                  'image',
-                                                 '--image_downloaddir',
-                                                'download'])
+                                                'foo',
+                                                '--ppi_embeddingdir',
+                                                'apms',
+                                                '--image_embeddingdir',
+                                                'image'])
             self.assertEqual(2, res)
         finally:
             shutil.rmtree(temp_dir)

@@ -21,7 +21,6 @@ from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 logger = logging.getLogger(__name__)
 
 
-
 class EmbeddingGenerator(object):
     """
     Base class for implementations that generate
