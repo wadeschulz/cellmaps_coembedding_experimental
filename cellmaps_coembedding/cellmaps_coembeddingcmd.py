@@ -45,7 +45,9 @@ def _parse_arguments(desc, args):
                         help='# of init training epochs')
     parser.add_argument('--n_epochs', default=500, type=int,
                         help='# of training epochs')
-
+    parser.add_argument('--jackknife_percent', default=0.0, type=float,
+                        help='Percentage of data to withhold from training'
+                             'a value of 0.1 means to withhold 10% of the data')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--logconf', default=None,
@@ -124,6 +126,7 @@ def main(args):
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            n_epochs=theargs.n_epochs,
                                            n_epochs_init=theargs.n_epochs_init,
+                                           jackknife_percent = theargs.jackknife_percent,
                                            outdir=os.path.abspath(theargs.outdir),
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
                                            image_embeddingdir=theargs.image_embeddingdir)

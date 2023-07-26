@@ -132,7 +132,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs_init=200,
                  outdir=None,
                  ppi_embeddingdir=None,
-                 image_embeddingdir=None
+                 image_embeddingdir=None,
+                 jackknife_percent = 0
                 ):
         """
 
@@ -145,6 +146,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         :param outdir:
         :param ppi_embeddingdir:
         :param image_embeddingdir:
+        :param jackknife_percent: percent of data to withhold from training
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -155,6 +157,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         self._dropout = dropout
         self._n_epochs = n_epochs
         self._n_epochs_init = n_epochs_init
+        self._jackknife_percent = jackknife_percent
 
     def get_next_embedding(self):
         """
@@ -180,11 +183,17 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         image_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
 
         resultsdir = os.path.join(self._outdir, 'muse')
+        
+        test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
+        if self._jackknife_percent > 0:
+            with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
+                file.write('\n'.join(np.array(name_index)[test_subset]))
 
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
                                                      data_x=ppi_embeddings_array,
                                                      data_y=image_embeddings_array,
                                                      name_index=name_index, 
+                                                     test_subset = test_subset,
                                                      latent_dim=self.get_dimensions(),
                                                      n_epochs=self._n_epochs,
                                                      n_epochs_init=self._n_epochs_init,
