@@ -289,51 +289,17 @@ class CellmapsCoEmbedder(object):
 
         :return:
         """
-        name_set = set()
-        proj_set = set()
-        org_set = set()
-        keyword_set_dict = {}
-        self._keywords = []
-        for entry in self._inputdirs:
-            name, proj_name, org_name, description, keywords = self._provenance_utils.get_name_project_org_keyword_description_of_rocrate(entry)
+        prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(self._inputdirs,
+                                                                                override_name=self._name,
+                                                                                override_project_name=self._project_name,
+                                                                                override_organization_name=self._organization_name,
+                                                                                extra_keywords=['merged embedding'])
 
-            name_set.add(name)
-            proj_set.add(proj_name)
-            org_set.add(org_name)
-            for index in range(len(keywords)):
-                if index not in keyword_set_dict:
-                    keyword_set_dict[index] = set()
-                keyword_set_dict[index].add(keywords[index])
-        logger.debug('keyword_set_dict: ' + str(keyword_set_dict))
-
-        if self._name is None:
-            self._name = '|'.join(list(name_set))
-
-        if self._organization_name is None:
-            self._organization_name = '|'.join(list(org_set))
-
-        if self._project_name is None:
-            self._project_name = '|'.join(list(proj_set))
-
-        # just grab 1st four elements assuming they are
-        # project, data_release_name, cell line, treatment,
-        # name_of_computation
-        if len(keyword_set_dict.keys()) >= 4:
-            for index in range(4):
-                self._keywords.append('|'.join(list(keyword_set_dict[index])))
-        else:
-            for index in range(len(keyword_set_dict.keys())):
-                self._keywords.append('|'.join(list(keyword_set_dict[index])))
-
-        self._keywords.extend(['merged embedding'])
-
-        self._description = ' '.join(self._keywords)
-
-        split_keywords = set()
-        for keyword in self._keywords:
-            if '|' in keyword:
-                split_keywords.update(keyword.split('|'))
-        self._keywords.extend(list(split_keywords))
+        self._name = prov_attrs.get_name()
+        self._organization_name = prov_attrs.get_organization_name()
+        self._project_name = prov_attrs.get_project_name()
+        self._keywords = prov_attrs.get_keywords()
+        self._description = prov_attrs.get_description()
 
     def _write_task_start_json(self):
         """
