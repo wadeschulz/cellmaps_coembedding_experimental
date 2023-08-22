@@ -260,4 +260,6 @@ def muse_fit_predict(resultsdir, data_x,
     pd.DataFrame(latent_x.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_x.txt'.format(resultsdir))
     pd.DataFrame(latent_y.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_y.txt'.format(resultsdir))
     
+    sourceFile.close()
+
     return model, detached_embeddings

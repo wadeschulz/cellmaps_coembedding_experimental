@@ -10,7 +10,8 @@ Cell Maps CoEmbedder
         :target: https://travis-ci.com/idekerlab/cellmaps_coembedding
 
 Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
-and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
+and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ using an implementation of `MUSE <https://github.com/AltschulerWu-Lab/MUSE>`__
+
 
 
 * Free software: MIT license

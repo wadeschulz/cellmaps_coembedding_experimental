@@ -14,11 +14,10 @@ Cell Maps CoEmbedder
         :alt: Documentation Status
 
 Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
-and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
+and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ using an implementation of `MUSE <https://github.com/AltschulerWu-Lab/MUSE>`__
 
 * Free software: MIT license
 * Documentation: https://cellmaps-coembedding.readthedocs.io.
-
 
 
 Dependencies
@@ -102,7 +101,7 @@ against those changes.
 Needed files
 ------------
 
-**TODO:** Add description of needed files
+The output directories for the image embeddings (see `Cell Maps Image Embedding <https://github.com/idekerlab/cellmaps_image_embedding/>`__) and protein-protein interaction network embeddings (see `Cell Maps PPI Embedding <https://github.com/idekerlab/cellmaps_ppi_embedding/>`__) are required. 
 
 
 Usage
@@ -112,11 +111,10 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 **Example usage**
 
-**TODO:** Add information about example usage
-
 .. code-block::
+ 
+   cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --image_embeddingdir ./cellmaps_image_embedding_outdir --ppi_embeddingdir ./cellmaps_ppi_embedding_outdir 
 
-   cellmaps_coembeddingcmd.py # TODO Add other needed arguments here
 
 
 Via Docker
@@ -124,12 +122,10 @@ Via Docker
 
 **Example usage**
 
-**TODO:** Add information about example usage
-
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_coembedding:0.1.0 cellmaps_coembeddingcmd.py # TODO Add other needed arguments here
+   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_coembedding:0.1.0 cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --image_embeddingdir ./cellmaps_image_embedding_outdir --ppi_embeddingdir ./cellmaps_ppi_embedding_outdir 
 
 
 Credits
