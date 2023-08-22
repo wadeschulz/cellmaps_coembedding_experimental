@@ -1,5 +1,6 @@
-Welcome to CM4AI CoEmbedding's documentation!
-================================================================
+=====================
+Cell Maps CoEmbedder
+=====================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
@@ -8,14 +9,8 @@ Welcome to CM4AI CoEmbedding's documentation!
 .. image:: https://img.shields.io/travis/idekerlab/cellmaps_coembedding.svg
         :target: https://travis-ci.com/idekerlab/cellmaps_coembedding
 
-.. image:: https://readthedocs.org/projects/cellmaps-coembedding/badge/?version=latest
-        :target: https://cellmaps-coembedding.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package with command line
+Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
+and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 
 * Free software: MIT license

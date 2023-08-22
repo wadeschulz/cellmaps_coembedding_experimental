@@ -47,7 +47,7 @@ def _parse_arguments(desc, args):
                         help='# of training epochs')
     parser.add_argument('--jackknife_percent', default=0.0, type=float,
                         help='Percentage of data to withhold from training'
-                             'a value of 0.1 means to withhold 10% of the data')
+                             'a value of 0.1 means to withhold 10 percent of the data')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--logconf', default=None,

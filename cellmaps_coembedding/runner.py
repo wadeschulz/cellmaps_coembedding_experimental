@@ -21,7 +21,6 @@ from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 logger = logging.getLogger(__name__)
 
 
-
 class EmbeddingGenerator(object):
     """
     Base class for implementations that generate
@@ -271,6 +270,8 @@ class CellmapsCoEmbedder(object):
         self._project_name = project_name
         self._organization_name = organization_name
         self._provenance_utils = provenance_utils
+        self._keywords = None
+        self._description = None
         self._embedding_generator = embedding_generator
         self._input_data_dict = input_data_dict
         self._softwareid = None
@@ -282,6 +283,23 @@ class CellmapsCoEmbedder(object):
             self._skip_logging = skip_logging
 
         logger.debug('In constructor')
+
+    def _update_provenance_fields(self):
+        """
+
+        :return:
+        """
+        prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(self._inputdirs,
+                                                                                override_name=self._name,
+                                                                                override_project_name=self._project_name,
+                                                                                override_organization_name=self._organization_name,
+                                                                                extra_keywords=['merged embedding'])
+
+        self._name = prov_attrs.get_name()
+        self._organization_name = prov_attrs.get_organization_name()
+        self._project_name = prov_attrs.get_project_name()
+        self._keywords = prov_attrs.get_keywords()
+        self._description = prov_attrs.get_description()
 
     def _write_task_start_json(self):
         """
@@ -305,32 +323,13 @@ class CellmapsCoEmbedder(object):
 
         :raises CellMapsProvenanceError: If there is an error
         """
-        name_set = set()
-        proj_set = set()
-        org_set = set()
-        for entry in self._inputdirs:
-            name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(entry)
-            name_set.add(name)
-            proj_set.add(proj_name)
-            org_set.add(org_name)
-
-        name = '|'.join(list(name_set))
-        proj_name = '|'.join(list(proj_set))
-        org_name = '|'.join(list(org_set))
-
-        if self._name is not None:
-            name = self._name
-
-        if self._organization_name is not None:
-            org_name = self._organization_name
-
-        if self._project_name is not None:
-            proj_name = self._project_name
         try:
             self._provenance_utils.register_rocrate(self._outdir,
-                                                    name=name,
-                                                    organization_name=org_name,
-                                                    project_name=proj_name)
+                                                    name=self._name,
+                                                    organization_name=self._organization_name,
+                                                    project_name=self._project_name,
+                                                    description=self._description,
+                                                    keywords=self._keywords)
         except TypeError as te:
             raise CellmapsCoEmbeddingError('Invalid provenance: ' + str(te))
         except KeyError as ke:
@@ -342,12 +341,17 @@ class CellmapsCoEmbedder(object):
 
         :raises CellMapsImageEmbeddingError: If fairscape call fails
         """
+        software_keywords = self._keywords
+        software_keywords.extend(['tools', cellmaps_coembedding.__name__])
+        software_description = self._description + ' ' + \
+                               cellmaps_coembedding.__description__
         self._softwareid = self._provenance_utils.register_software(self._outdir,
                                                                     name=cellmaps_coembedding.__name__,
-                                                                    description=cellmaps_coembedding.__description__,
+                                                                    description=software_description,
                                                                     author=cellmaps_coembedding.__author__,
                                                                     version=cellmaps_coembedding.__version__,
-                                                                    file_format='.py',
+                                                                    file_format='py',
+                                                                    keywords=software_keywords,
                                                                     url=cellmaps_coembedding.__repo_url__)
 
     def _register_computation(self):
@@ -359,11 +363,17 @@ class CellmapsCoEmbedder(object):
         used_dataset = []
         for entry in self._inputdirs:
             used_dataset.append(self._provenance_utils.get_id_of_rocrate(entry))
+
+        keywords = self._keywords
+        keywords.extend(['computation'])
+        description = self._description + ' run of ' + cellmaps_coembedding.__name__
+
         self._provenance_utils.register_computation(self._outdir,
                                                     name=cellmaps_coembedding.__name__ + ' computation',
                                                     run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
-                                                    description='run of ' + cellmaps_coembedding.__name__,
+                                                    description=description,
+                                                    keywords=keywords,
                                                     used_software=[self._softwareid],
                                                     used_dataset=used_dataset,
                                                     generated=[self._coembedding_id])
@@ -373,8 +383,13 @@ class CellmapsCoEmbedder(object):
         Registers coembedding file with create as a dataset
 
         """
+        description = self._description
+        description += ' Co-Embedding file'
+        keywords = self._keywords
+        keywords.extend(['file'])
         data_dict = {'name': os.path.basename(self.get_coembedding_file()) + ' coembedding output file',
-                     'description': 'CoEmbedding file',
+                     'description': description,
+                     'keywords': keywords,
                      'data-format': 'tsv',
                      'author': cellmaps_coembedding.__name__,
                      'version': cellmaps_coembedding.__version__,
@@ -412,6 +427,7 @@ class CellmapsCoEmbedder(object):
                                           handlerprefix='cellmaps_coembedding')
                 self._write_task_start_json()
 
+            self._update_provenance_fields()
             self._create_rocrate()
             self._register_software()
 

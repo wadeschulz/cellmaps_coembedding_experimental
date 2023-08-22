@@ -1,6 +1,6 @@
-==================
-CM4AI CoEmbedding
-==================
+=====================
+Cell Maps CoEmbedder
+=====================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
@@ -13,8 +13,8 @@ CM4AI CoEmbedding
         :target: https://cellmaps-generate-ppi.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-A tool to generate coembeddings from IF image embeddings and PPI network embeddings
-
+Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
+and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 * Free software: MIT license
 * Documentation: https://cellmaps-coembedding.readthedocs.io.
@@ -47,7 +47,7 @@ Installation
    git clone https://github.com/idekerlab/cellmaps_coembedding
    cd cellmaps_coembedding
    make dist
-   pip install dist/cellmaps_coembeddingcmd*whl
+   pip install dist/cellmaps_coembedding*whl
 
 
 Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
