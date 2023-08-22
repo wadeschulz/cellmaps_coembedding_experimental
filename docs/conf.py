@@ -63,7 +63,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'CM4AI CoEmbedding'
+project = u'cellmaps_coembedding'
 copyright = u"2023, The Regents of the University of California"
 author = u"Leah Schaffer"
 
@@ -159,7 +159,7 @@ latex_elements = {
 # [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'cellmaps_coembedding.tex',
-     u'CM4AI CoEmbedding Documentation',
+     u'CoEmbedding Documentation',
      u'Leah Schaffer', 'manual'),
 ]
 
@@ -170,7 +170,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'cellmaps_coembedding',
-     u'CM4AI CoEmbedding Documentation',
+     u'CoEmbedding Documentation',
      [author], 1)
 ]
 
@@ -182,7 +182,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'cellmaps_coembedding',
-     u'CM4AI CoEmbedding Documentation',
+     u'CoEmbedding Documentation',
      author,
      'cellmaps_coembedding',
      'One line description of project.',

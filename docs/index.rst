@@ -1,5 +1,5 @@
 =====================
-Cell Maps CoEmbedder
+Cell Maps CoEmbedding
 =====================
 
 
