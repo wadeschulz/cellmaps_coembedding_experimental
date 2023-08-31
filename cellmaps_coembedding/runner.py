@@ -369,7 +369,7 @@ class CellmapsCoEmbedder(object):
         description = self._description + ' run of ' + cellmaps_coembedding.__name__
 
         self._provenance_utils.register_computation(self._outdir,
-                                                    name=cellmaps_coembedding.__name__ + ' computation',
+                                                    name=cellmaps_coembedding.__computation_name__,
                                                     run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
                                                     description=description,
