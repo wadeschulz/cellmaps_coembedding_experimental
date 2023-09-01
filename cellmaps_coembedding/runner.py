@@ -393,7 +393,7 @@ class CellmapsCoEmbedder(object):
                      'data-format': 'tsv',
                      'author': cellmaps_coembedding.__name__,
                      'version': cellmaps_coembedding.__version__,
-                     'date-published': date.today().strftime('%m-%d-%Y')}
+                     'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
         self._coembedding_id = self._provenance_utils.register_dataset(self._outdir,
                                                                        source_file=self.get_coembedding_file(),
                                                                        data_dict=data_dict,
