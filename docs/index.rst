@@ -23,6 +23,7 @@ and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ u
 
    installation
    usage
+   outputs
    modules
    developer
    authors
