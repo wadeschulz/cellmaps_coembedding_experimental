@@ -108,7 +108,7 @@ class EmbeddingGenerator(object):
         :rtype: int
         """
         return self._dimensions
-    
+
 
     def get_next_embedding(self):
         """
@@ -182,7 +182,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         image_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
 
         resultsdir = os.path.join(self._outdir, 'muse')
-        
+
         test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
         if self._jackknife_percent > 0:
             with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
@@ -191,7 +191,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
                                                      data_x=ppi_embeddings_array,
                                                      data_y=image_embeddings_array,
-                                                     name_index=name_index, 
+                                                     name_index=name_index,
                                                      test_subset = test_subset,
                                                      latent_dim=self.get_dimensions(),
                                                      n_epochs=self._n_epochs,
@@ -252,13 +252,26 @@ class CellmapsCoEmbedder(object):
                  organization_name=None,
                  project_name=None,
                  provenance_utils=ProvenanceUtil(),
-                 skip_logging=False,
+                 skip_logging=True,
                  input_data_dict=None):
         """
         Constructor
-
-        :param exitcode: value to return via :py:meth:`.CellmapsCoEmbedder.run` method
-        :type int:
+        :param outdir: Directory to write the results of this tool
+        :type outdir: str
+        :param inputdir: Output directory where embeddings to be coembedded are located
+                         (output of cellmaps_image_embedding and cellmaps_ppi_embedding)
+        :type inputdir: str
+        :param embedding_generator:
+        :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
+        :type skip_logging: bool
+        :param name:
+        :type name: str
+        :param organization_name:
+        :type organization_name: str
+        :param project_name:
+        :type project_name: str
+        :param input_data_dict:
+        :type input_data_dict: dict
         """
         if outdir is None:
             raise CellmapsCoEmbeddingError('outdir is None')
@@ -425,7 +438,7 @@ class CellmapsCoEmbedder(object):
             if self._skip_logging is False:
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_coembedding')
-                self._write_task_start_json()
+            self._write_task_start_json()
 
             self._update_provenance_fields()
             self._create_rocrate()
@@ -447,11 +460,10 @@ class CellmapsCoEmbedder(object):
             exitcode = 0
         finally:
             self._end_time = int(time.time())
-            if self._skip_logging is False:
-                # write a task finish file
-                logutils.write_task_finish_json(outdir=self._outdir,
-                                                start_time=self._start_time,
-                                                end_time=self._end_time,
-                                                status=exitcode)
+            # write a task finish file
+            logutils.write_task_finish_json(outdir=self._outdir,
+                                            start_time=self._start_time,
+                                            end_time=self._end_time,
+                                            status=exitcode)
         logger.debug('Exit code: ' + str(exitcode))
         return exitcode

@@ -3,8 +3,14 @@
 
 """Tests for `cellmaps_coembedding` package."""
 
-
+import os
+import shutil
 import unittest
+import tempfile
+from unittest.mock import MagicMock
+
+from cellmaps_utils.exceptions import CellMapsProvenanceError
+
 from cellmaps_coembedding.runner import CellmapsCoEmbedder
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
@@ -31,3 +37,45 @@ class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
             self.fail('Expected exception')
         except CellmapsCoEmbeddingError as ce:
             self.assertEqual('outdir is None', str(ce))
+
+    def test_run_without_logging(self):
+        """ Tests run() without logging."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            run_dir = os.path.join(temp_dir, 'run')
+            mock_embedding_generator = MagicMock()
+            myobj = CellmapsCoEmbedder(outdir=run_dir,
+                                       embedding_generator=mock_embedding_generator)
+            try:
+                myobj.run()
+                self.fail('Expected CellMapsProvenanceError')
+            except CellMapsProvenanceError as e:
+                print(e)
+                self.assertTrue('rocrate' in str(e))
+
+            self.assertFalse(os.path.isfile(os.path.join(run_dir, 'output.log')))
+            self.assertFalse(os.path.isfile(os.path.join(run_dir, 'error.log')))
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_run_with_logging(self):
+        """ Tests run() with logging."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            run_dir = os.path.join(temp_dir, 'run')
+            mock_embedding_generator = MagicMock()
+            myobj = CellmapsCoEmbedder(outdir=run_dir,
+                                       embedding_generator=mock_embedding_generator,
+                                       skip_logging=False)
+            try:
+                myobj.run()
+                self.fail('Expected CellMapsProvenanceError')
+            except CellMapsProvenanceError as e:
+                self.assertTrue('rocrate' in str(e))
+
+            self.assertTrue(os.path.isfile(os.path.join(run_dir, 'output.log')))
+            self.assertTrue(os.path.isfile(os.path.join(run_dir, 'error.log')))
+
+        finally:
+            shutil.rmtree(temp_dir)
