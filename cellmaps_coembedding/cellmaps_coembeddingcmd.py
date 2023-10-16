@@ -56,8 +56,8 @@ def _parse_arguments(desc, args):
                              'logging.config.html#logging-config-fileformat '
                              'Setting this overrides -v parameter which uses '
                              ' default logger. (default None)')
-    parser.add_argument('--skip_logging', type=_str2bool, default=True,
-                        help='If set, output.log, error.log ' +
+    parser.add_argument('--skip_logging', action='store_true',
+                        help='If set, output.log, error.log '
                              'files will not be created')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='Increases verbosity of logger to standard '
@@ -71,15 +71,6 @@ def _parse_arguments(desc, args):
                                  cellmaps_coembedding.__version__))
 
     return parser.parse_args(args)
-
-
-def _str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def main(args):
