@@ -56,6 +56,9 @@ def _parse_arguments(desc, args):
                              'logging.config.html#logging-config-fileformat '
                              'Setting this overrides -v parameter which uses '
                              ' default logger. (default None)')
+    parser.add_argument('--skip_logging', type=_str2bool, default=True,
+                        help='If set, output.log, error.log ' +
+                             'files will not be created')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='Increases verbosity of logger to standard '
                              'error for log messages in this module. Messages are '
@@ -68,6 +71,15 @@ def _parse_arguments(desc, args):
                                  cellmaps_coembedding.__version__))
 
     return parser.parse_args(args)
+
+
+def _str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def main(args):
@@ -84,21 +96,21 @@ def main(args):
     desc = """
     Version {version}
 
-    Given image and PPI embeddings, this tool generates a co-embedding using 
-    a variant of MuSE algorithm within this code base from 
+    Given image and PPI embeddings, this tool generates a co-embedding using
+    a variant of MuSE algorithm within this code base from
     Feng Bao @ Altschuler & Wu Lab @ UCSF 2022
     that is under MIT License.
-    
+
     To run this tool requires that an output directory be specified and these
     flags be set.
-    
+
     {ppi_embeddingdir} should be set to a directory path created by
                        cellmaps_ppi_embedding which has a {ppi_embedding_file} file
                        containing the tab delimited embeddings of the PPI network.
-                       For each row, first value is assumed to be the gene symbol 
-                       followed by the embeddings separated by tabs. The first 
+                       For each row, first value is assumed to be the gene symbol
+                       followed by the embeddings separated by tabs. The first
                        row is assumed to be a header
-                       
+
     {image_embeddingdir} should be set to a directory path created by
                        cellmaps_image_embedding which has a {image_embedding_file} file
                        containing the tab delimited embeddings of the IF images
@@ -126,13 +138,14 @@ def main(args):
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            n_epochs=theargs.n_epochs,
                                            n_epochs_init=theargs.n_epochs_init,
-                                           jackknife_percent = theargs.jackknife_percent,
+                                           jackknife_percent=theargs.jackknife_percent,
                                            outdir=os.path.abspath(theargs.outdir),
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
                                            image_embeddingdir=theargs.image_embeddingdir)
         return CellmapsCoEmbedder(outdir=theargs.outdir,
                                   inputdirs=[theargs.image_embeddingdir, theargs.ppi_embeddingdir],
                                   embedding_generator=gen,
+                                  skip_logging=theargs.skip_logging,
                                   input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
