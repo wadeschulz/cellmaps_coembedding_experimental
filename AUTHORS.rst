@@ -2,6 +2,8 @@
 Credits
 =======
 
+The co-embedding in this tool is derived from `MUSE <https://github.com/AltschulerWu-Lab/MUSE>`__
+
 Developers
 ----------------
 

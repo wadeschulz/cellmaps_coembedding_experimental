@@ -6,11 +6,11 @@ Cell Maps CoEmbedder
 .. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
         :target: https://pypi.python.org/pypi/cellmaps_coembedding
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_coembedding.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_coembedding
+.. image:: https://app.travis-ci.com/idekerlab/cellmaps_coembedding.svg?branch=main
+        :target: https://app.travis-ci.com/idekerlab/cellmaps_coembedding
 
-.. image:: https://readthedocs.org/projects/cellmaps-generate-ppi/badge/?version=latest
-        :target: https://cellmaps-generate-ppi.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/cellmaps-coembedding/badge/?version=latest
+        :target: https://cellmaps-coembedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
@@ -125,8 +125,7 @@ Via Docker
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_coembedding:0.1.0 cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --image_embeddingdir ./cellmaps_image_embedding_outdir --ppi_embeddingdir ./cellmaps_ppi_embedding_outdir 
-
+   Coming soon...
 
 Credits
 -------
