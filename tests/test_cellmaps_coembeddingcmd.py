@@ -28,7 +28,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                                                                '--image_embeddingdir',
                                                                'image'])
 
-        self.assertEqual(res.verbose, 0)
+        self.assertEqual(res.verbose, 1)
         self.assertEqual(res.logconf, None)
 
         someargs = ['-vv', '--logconf', 'hi',
@@ -39,7 +39,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                     'image']
         res = cellmaps_coembeddingcmd._parse_arguments('hi', someargs)
 
-        self.assertEqual(2, res.verbose)
+        self.assertEqual(3, res.verbose)
         self.assertEqual('hi', res.logconf)
         self.assertEqual('foo', res.outdir)
         self.assertEqual('apms', res.ppi_embeddingdir)

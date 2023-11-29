@@ -59,12 +59,12 @@ def _parse_arguments(desc, args):
     parser.add_argument('--skip_logging', action='store_true',
                         help='If set, output.log, error.log '
                              'files will not be created')
-    parser.add_argument('--verbose', '-v', action='count', default=0,
+    parser.add_argument('--verbose', '-v', action='count', default=1,
                         help='Increases verbosity of logger to standard '
                              'error for log messages in this module. Messages are '
                              'output at these python logging levels '
-                             '-v = ERROR, -vv = WARNING, -vvv = INFO, '
-                             '-vvvv = DEBUG, -vvvvv = NOTSET (default no '
+                             '-v = WARNING, -vv = INFO, '
+                             '-vvv = DEBUG, -vvvv = NOTSET (default ERROR '
                              'logging)')
     parser.add_argument('--version', action='version',
                         version=('%(prog)s ' +
