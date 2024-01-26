@@ -8,6 +8,9 @@ import tempfile
 import shutil
 
 import unittest
+
+from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
+
 from cellmaps_coembedding import cellmaps_coembeddingcmd
 
 
@@ -60,3 +63,45 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
             self.assertEqual(2, res)
         finally:
             shutil.rmtree(temp_dir)
+
+    def test_main_with_embedding_dirs_two_dirs(self):
+        try:
+            temp_dir = tempfile.mkdtemp()
+            res = cellmaps_coembeddingcmd.main(['myprog.py',
+                                                'foo',
+                                                '--embedding_dirs',
+                                                'dir1', 'dir2'])
+            self.assertIn(res, [0, 2])
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_main_with_embedding_dirs_more_than_two_dirs(self):
+        with self.assertRaises(CellmapsCoEmbeddingError):
+            cellmaps_coembeddingcmd.main(['myprog.py',
+                                          'foo',
+                                          '--embedding_dirs',
+                                          'dir1', 'dir2', 'dir3'])
+
+    def test_main_with_conflicting_flags(self):
+        with self.assertRaises(CellmapsCoEmbeddingError):
+            cellmaps_coembeddingcmd.main(['myprog.py',
+                                          'foo',
+                                          '--ppi_embeddingdir', 'apms',
+                                          '--image_embeddingdir', 'image',
+                                          '--embedding_dirs', 'dir1', 'dir2'])
+
+    def test_main_with_old_flags_only(self):
+        try:
+            temp_dir = tempfile.mkdtemp()
+            res = cellmaps_coembeddingcmd.main(['myprog.py',
+                                                'foo',
+                                                '--ppi_embeddingdir', 'apms',
+                                                '--image_embeddingdir', 'image'])
+            self.assertIn(res, [0, 2])
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_main_with_no_flags(self):
+        with self.assertRaises(CellmapsCoEmbeddingError):
+            cellmaps_coembeddingcmd.main(['myprog.py',
+                                          'foo'])

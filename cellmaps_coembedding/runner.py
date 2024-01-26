@@ -26,6 +26,7 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+
     def __init__(self, dimensions=1024,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
@@ -36,18 +37,31 @@ class EmbeddingGenerator(object):
         self._dimensions = dimensions
         self._ppi_embeddingdir = ppi_embeddingdir
         self._image_embeddingdir = image_embeddingdir
+        self._embedding_names = []
+
+    def _get_embedding_file(self, embedding_dir):
+        path_ppi = os.path.join(embedding_dir,
+                                constants.PPI_EMBEDDING_FILE)
+        if os.path.exists(path_ppi):
+            self._embedding_names.append('PPI')
+            return path_ppi
+        path_image = os.path.join(embedding_dir,
+                                  constants.IMAGE_EMBEDDING_FILE)
+        if os.path.exists(path_image):
+            self._embedding_names.append('image')
+            return path_image
+        raise CellmapsCoEmbeddingError(f'Embedding file not found in {embedding_dir}')
 
     def _get_ppi_embeddings_file(self):
         """
 
         :return:
         """
-        return os.path.join(self._ppi_embeddingdir,
-                            constants.PPI_EMBEDDING_FILE)
+        return self._get_embedding_file(self._ppi_embeddingdir)
 
     def _get_ppi_embeddings(self):
         """
-        Gets PPI embedding from ppi embedding directory set via input
+        Gets PPI or image embedding from directory specified as ppi embedding set via input
 
         :return: embeddings
         :rtype: list
@@ -59,12 +73,11 @@ class EmbeddingGenerator(object):
 
         :return:
         """
-        return os.path.join(self._image_embeddingdir,
-                            constants.IMAGE_EMBEDDING_FILE)
+        return self._get_embedding_file(self._image_embeddingdir)
 
     def _get_image_embeddings(self):
         """
-        Gets PPI embedding from ppi embedding directory set via input
+        Gets PPI or image embedding from directory specified as ppi embedding set via input
 
         :return: embeddings
         :rtype: list
@@ -109,7 +122,6 @@ class EmbeddingGenerator(object):
         """
         return self._dimensions
 
-
     def get_next_embedding(self):
         """
         Generator method for getting next embedding.
@@ -126,14 +138,15 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
     """
+
     def __init__(self, dimensions=128,
                  k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
                  n_epochs_init=200,
                  outdir=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
-                 jackknife_percent = 0
-                ):
+                 jackknife_percent=0
+                 ):
         """
 
         :param dimensions:
@@ -165,9 +178,9 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         """
         ppi_embeddings = self._get_ppi_embeddings()
         ppi_embeddings.sort(key=lambda x: x[0])
-        logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
+        logger.info('There are ' + str(len(ppi_embeddings)) + ' ' + self._embedding_names[0] + ' embeddings')
         image_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(image_embeddings)) + ' image embeddings')
+        logger.info('There are ' + str(len(image_embeddings)) + ' ' + self._embedding_names[1] + ' embeddings')
         image_embeddings.sort(key=lambda x: x[0])
         ppi_name_set = self._get_set_of_embedding_names(ppi_embeddings)
         image_name_set = self._get_set_of_embedding_names(image_embeddings)
@@ -178,8 +191,10 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
 
         name_index = [x[0] for x in ppi_embeddings if x[0] in intersection_name_set]
 
-        ppi_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in ppi_embeddings if xi[0] in intersection_name_set])
-        image_embeddings_array = np.array([np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
+        ppi_embeddings_array = np.array(
+            [np.array([float(e) for e in xi[1:]]) for xi in ppi_embeddings if xi[0] in intersection_name_set])
+        image_embeddings_array = np.array(
+            [np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
 
         resultsdir = os.path.join(self._outdir, 'muse')
 
@@ -192,7 +207,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                                                      data_x=ppi_embeddings_array,
                                                      data_y=image_embeddings_array,
                                                      name_index=name_index,
-                                                     test_subset = test_subset,
+                                                     test_subset=test_subset,
                                                      latent_dim=self.get_dimensions(),
                                                      n_epochs=self._n_epochs,
                                                      n_epochs_init=self._n_epochs_init,
@@ -208,6 +223,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generates a fake coembedding
     """
+
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
                  image_embeddingdir=None):
         """
@@ -225,9 +241,9 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         :return:
         """
         ppi_embeddings = self._get_ppi_embeddings()
-        logger.info('There are ' + str(len(ppi_embeddings)) + ' PPI embeddings')
+        logger.info('There are ' + str(len(ppi_embeddings)) + ' ' + self._embedding_names[0] + ' embeddings')
         image_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(image_embeddings)) + ' image embeddings')
+        logger.info('There are ' + str(len(image_embeddings)) + ' ' + self._embedding_names[1] + ' embeddings')
 
         ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
         image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
@@ -421,7 +437,7 @@ class CellmapsCoEmbedder(object):
 
     def run(self):
         """
-        Runs CM4AI Generate PPI
+        Runs CM4AI Generate COEMBEDDINGS
 
 
         :return:
