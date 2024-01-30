@@ -34,16 +34,16 @@ def _parse_arguments(desc, args):
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--embedding_dirs', nargs='+',
+    parser.add_argument('--embeddings', nargs='+',
                         help='Directories with embeddings. Requires two or more paths.')
     parser.add_argument('--algorithm', choices=['auto', 'muse'], default='auto',
                         help='Algorithm to use for coembedding. Defaults to auto.')
     parser.add_argument(PPI_EMBEDDINGDIR,
                         help='Directory aka rocrate where ppi '
-                             'embedding file resides (Deprecated: use embedding_dirs flag)')
+                             'embedding file resides (Deprecated: use embeddings flag)')
     parser.add_argument(IMAGE_EMBEDDINGDIR,
                         help='Directory aka rocrate image embedding '
-                             'file resides (Deprecated: use embedding_dirs flag)')
+                             'file resides (Deprecated: use embeddings flag)')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
     parser.add_argument('--n_epochs_init', default=200, type=int,
@@ -76,6 +76,21 @@ def _parse_arguments(desc, args):
                                  cellmaps_coembedding.__version__))
 
     return parser.parse_args(args)
+
+
+def set_embedding_dirs(embeddings):
+    dirs = []
+    file_names = []
+
+    for embed in embeddings:
+        if os.path.isfile(embed):
+            dirs.append(os.path.dirname(embed))
+            file_names.append(os.path.basename(embed))
+        else:
+            dirs.append(embed)
+            file_names.append(None)
+
+    return dirs, file_names if file_names else None
 
 
 def main(args):
@@ -124,29 +139,35 @@ def main(args):
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
 
-    if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embedding_dirs:
-        raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embedding_dirs, '
+    if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embeddings:
+        raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
                                        'not both')
-
-    if theargs.embedding_dirs:
-        input_dirs = theargs.embedding_dirs
-        if len(theargs.embedding_dirs) == 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
-            theargs.ppi_embeddingdir = theargs.embedding_dirs[0]
-            theargs.image_embeddingdir = theargs.embedding_dirs[1]
+    embed_files = None
+    if theargs.embeddings:
+        if len(theargs.embeddings) == 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
+            embed_dirs, embed_files = set_embedding_dirs(theargs.embeddings)
+            # TODO: verify if user can provide mix of dirs and files
+            # if len(embed_dirs) != len(embed_files):
+            #     raise CellmapsCoEmbeddingError('In --embeddings parameter, provide either paths to embedding files,'
+            #                                    'or to ro-crates where the files exist, not mix of both.')
+            theargs.ppi_embeddingdir = embed_dirs[0]
+            theargs.image_embeddingdir = embed_dirs[1]
         else:
-            raise CellmapsCoEmbeddingError('Currently, only two directories are supported with --embedding_dirs')
-    elif theargs.ppi_embeddingdir and theargs.image_embeddingdir:
+            raise CellmapsCoEmbeddingError('Currently, only two directories are supported with --embeddings')
+
+    if theargs.ppi_embeddingdir and theargs.image_embeddingdir:
         input_dirs = [theargs.image_embeddingdir, theargs.ppi_embeddingdir]
     else:
         raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
-                                       'or --embedding_dirs are required')
+                                       'or --embeddings are required')
 
     try:
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedding:
             gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir)
+                                           image_embeddingdir=theargs.image_embeddingdir,
+                                           embedding_filenames=embed_files)
         else:
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            n_epochs=theargs.n_epochs,
@@ -154,7 +175,8 @@ def main(args):
                                            jackknife_percent=theargs.jackknife_percent,
                                            outdir=os.path.abspath(theargs.outdir),
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir)
+                                           image_embeddingdir=theargs.image_embeddingdir,
+                                           embedding_filenames=embed_files)
         return CellmapsCoEmbedder(outdir=theargs.outdir,
                                   inputdirs=input_dirs,
                                   embedding_generator=gen,

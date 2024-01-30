@@ -48,10 +48,10 @@ class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
                                        embedding_generator=mock_embedding_generator)
             try:
                 myobj.run()
-                self.fail('Expected CellMapsProvenanceError')
-            except CellMapsProvenanceError as e:
+                self.fail('Expected CellmapsCoEmbeddingError')
+            except CellmapsCoEmbeddingError as e:
                 print(e)
-                self.assertTrue('rocrate' in str(e))
+                self.assertTrue('embeddings' in str(e))
 
             self.assertFalse(os.path.isfile(os.path.join(run_dir, 'output.log')))
             self.assertFalse(os.path.isfile(os.path.join(run_dir, 'error.log')))
@@ -70,9 +70,10 @@ class TestCellmapsCoEmbeddingRunner(unittest.TestCase):
                                        skip_logging=False)
             try:
                 myobj.run()
-                self.fail('Expected CellMapsProvenanceError')
-            except CellMapsProvenanceError as e:
-                self.assertTrue('rocrate' in str(e))
+                self.fail('Expected CellmapsCoEmbeddingError')
+            except CellmapsCoEmbeddingError as e:
+                print(e)
+                self.assertTrue('embeddings' in str(e))
 
             self.assertTrue(os.path.isfile(os.path.join(run_dir, 'output.log')))
             self.assertTrue(os.path.isfile(os.path.join(run_dir, 'error.log')))

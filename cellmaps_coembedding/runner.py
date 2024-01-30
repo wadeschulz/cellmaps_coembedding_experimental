@@ -30,6 +30,7 @@ class EmbeddingGenerator(object):
     def __init__(self, dimensions=1024,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
+                 embedding_filenames=None
                  ):
         """
         Constructor
@@ -37,6 +38,7 @@ class EmbeddingGenerator(object):
         self._dimensions = dimensions
         self._ppi_embeddingdir = ppi_embeddingdir
         self._image_embeddingdir = image_embeddingdir
+        self._embedding_filenames = embedding_filenames
         self._embedding_names = []
 
     def _get_embedding_file(self, embedding_dir):
@@ -57,7 +59,11 @@ class EmbeddingGenerator(object):
 
         :return:
         """
-        return self._get_embedding_file(self._ppi_embeddingdir)
+        if self._embedding_filenames is None or self._embedding_filenames[0] is None:
+            return self._get_embedding_file(self._ppi_embeddingdir)
+        else:
+            self._embedding_names.append(self._embedding_filenames[0])
+            return os.path.join(self._ppi_embeddingdir, self._embedding_filenames[0])
 
     def _get_ppi_embeddings(self):
         """
@@ -73,7 +79,11 @@ class EmbeddingGenerator(object):
 
         :return:
         """
-        return self._get_embedding_file(self._image_embeddingdir)
+        if self._embedding_filenames is None or self._embedding_filenames[1] is None:
+            return self._get_embedding_file(self._image_embeddingdir)
+        else:
+            self._embedding_names.append(self._embedding_filenames[1])
+            return os.path.join(self._image_embeddingdir, self._embedding_filenames[1])
 
     def _get_image_embeddings(self):
         """
@@ -145,7 +155,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  outdir=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
-                 jackknife_percent=0
+                 jackknife_percent=0,
+                 embedding_filenames=None,
                  ):
         """
 
@@ -162,7 +173,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
-                         image_embeddingdir=image_embeddingdir)
+                         image_embeddingdir=image_embeddingdir,
+                         embedding_filenames=embedding_filenames)
         self._outdir = outdir
         self._k = k
         self.triplet_margin = triplet_margin
@@ -225,14 +237,15 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
 
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
-                 image_embeddingdir=None):
+                 image_embeddingdir=None, embedding_filenames=None):
         """
         Constructor
         :param dimensions:
         """
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
-                         image_embeddingdir=image_embeddingdir)
+                         image_embeddingdir=image_embeddingdir,
+                         embedding_filenames=embedding_filenames)
 
     def get_next_embedding(self):
         """
@@ -261,6 +274,7 @@ class CellmapsCoEmbedder(object):
     """
     Class to run algorithm
     """
+
     def __init__(self, outdir=None,
                  inputdirs=None,
                  embedding_generator=None,
@@ -305,6 +319,7 @@ class CellmapsCoEmbedder(object):
         self._input_data_dict = input_data_dict
         self._softwareid = None
         self._coembedding_id = None
+        self._inputdir_is_rocrate = None
 
         if skip_logging is None:
             self._skip_logging = False
@@ -318,17 +333,31 @@ class CellmapsCoEmbedder(object):
 
         :return:
         """
-        prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(self._inputdirs,
-                                                                                override_name=self._name,
-                                                                                override_project_name=self._project_name,
-                                                                                override_organization_name=self._organization_name,
-                                                                                extra_keywords=['merged embedding'])
+        rocrate_dirs = []
+        if self._inputdirs is not None:
+            for embeddind_dir in self._inputdirs:
+                if os.path.exists(os.path.join(embeddind_dir, constants.RO_CRATE_METADATA_FILE)):
+                    rocrate_dirs.append(embeddind_dir)
+        if len(rocrate_dirs) > 0:
+            prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(rocrate_dirs,
+                                                                                    override_name=self._name,
+                                                                                    override_project_name=
+                                                                                    self._project_name,
+                                                                                    override_organization_name=
+                                                                                    self._organization_name,
+                                                                                    extra_keywords=['merged embedding'])
 
-        self._name = prov_attrs.get_name()
-        self._organization_name = prov_attrs.get_organization_name()
-        self._project_name = prov_attrs.get_project_name()
-        self._keywords = prov_attrs.get_keywords()
-        self._description = prov_attrs.get_description()
+            self._name = prov_attrs.get_name()
+            self._organization_name = prov_attrs.get_organization_name()
+            self._project_name = prov_attrs.get_project_name()
+            self._keywords = prov_attrs.get_keywords()
+            self._description = prov_attrs.get_description()
+        else:
+            self._name = 'Coembedding tool'
+            self._organization_name = 'Example'
+            self._project_name = 'Example'
+            self._keywords = ['coembedding']
+            self._description = 'Example input dataset Coembedding'
 
     def _write_task_start_json(self):
         """
@@ -391,7 +420,8 @@ class CellmapsCoEmbedder(object):
         logger.debug('Getting id of input rocrate')
         used_dataset = []
         for entry in self._inputdirs:
-            used_dataset.append(self._provenance_utils.get_id_of_rocrate(entry))
+            if os.path.exists(os.path.join(entry, constants.RO_CRATE_METADATA_FILE)):
+                used_dataset.append(self._provenance_utils.get_id_of_rocrate(entry))
 
         keywords = self._keywords
         keywords.extend(['computation'])
@@ -455,6 +485,8 @@ class CellmapsCoEmbedder(object):
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_coembedding')
             self._write_task_start_json()
+            if self._inputdirs is None:
+                raise CellmapsCoEmbeddingError('No embeddings provided')
 
             self._update_provenance_fields()
             self._create_rocrate()

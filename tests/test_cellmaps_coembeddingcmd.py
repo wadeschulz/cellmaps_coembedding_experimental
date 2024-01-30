@@ -69,7 +69,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
             temp_dir = tempfile.mkdtemp()
             res = cellmaps_coembeddingcmd.main(['myprog.py',
                                                 'foo',
-                                                '--embedding_dirs',
+                                                '--embeddings',
                                                 'dir1', 'dir2'])
             self.assertIn(res, [0, 2])
         finally:
@@ -79,7 +79,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
         with self.assertRaises(CellmapsCoEmbeddingError):
             cellmaps_coembeddingcmd.main(['myprog.py',
                                           'foo',
-                                          '--embedding_dirs',
+                                          '--embeddings',
                                           'dir1', 'dir2', 'dir3'])
 
     def test_main_with_conflicting_flags(self):
@@ -88,7 +88,7 @@ class TestCellmapsCoEmbedding(unittest.TestCase):
                                           'foo',
                                           '--ppi_embeddingdir', 'apms',
                                           '--image_embeddingdir', 'image',
-                                          '--embedding_dirs', 'dir1', 'dir2'])
+                                          '--embeddings', 'dir1', 'dir2'])
 
     def test_main_with_old_flags_only(self):
         try:
