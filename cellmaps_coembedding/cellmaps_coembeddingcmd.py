@@ -146,10 +146,6 @@ def main(args):
     if theargs.embeddings:
         if len(theargs.embeddings) == 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
             embed_dirs, embed_files = set_embedding_dirs(theargs.embeddings)
-            # TODO: verify if user can provide mix of dirs and files
-            # if len(embed_dirs) != len(embed_files):
-            #     raise CellmapsCoEmbeddingError('In --embeddings parameter, provide either paths to embedding files,'
-            #                                    'or to ro-crates where the files exist, not mix of both.')
             theargs.ppi_embeddingdir = embed_dirs[0]
             theargs.image_embeddingdir = embed_dirs[1]
         else:
