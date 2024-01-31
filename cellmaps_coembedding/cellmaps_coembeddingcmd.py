@@ -112,29 +112,17 @@ def main(args):
     Feng Bao @ Altschuler & Wu Lab @ UCSF 2022
     that is under MIT License.
 
-    To run this tool requires that an output directory be specified and these
-    flags be set.
+    To run this tool requires that an output directory be specified and two embeddings
+    be set via --embeddings flag. The values passed to --embeddings can be an ro-crate 
+    containing either a ppi_emd.tsv or image_emd.tsv file or a path to a TSV file.
+    
+    It is assumed these files are tab delimited embeddings and for each row, 
+    first value is assumed to be sample ID followed by the embeddings separated by 
+    tabs. The first row is assumed to be a header. 
 
-    {ppi_embeddingdir} should be set to a directory path created by
-                       cellmaps_ppi_embedding which has a {ppi_embedding_file} file
-                       containing the tab delimited embeddings of the PPI network.
-                       For each row, first value is assumed to be the gene symbol
-                       followed by the embeddings separated by tabs. The first
-                       row is assumed to be a header
+    
 
-    {image_embeddingdir} should be set to a directory path created by
-                       cellmaps_image_embedding which has a {image_embedding_file} file
-                       containing the tab delimited embeddings of the IF images
-                       For each row, first value is assumed to be sample ID followed
-                       by the embeddings separated by tabs. The first row
-                       is assumed to be a header.
-
-    """.format(version=cellmaps_coembedding.__version__,
-               ppi_embeddingdir=PPI_EMBEDDINGDIR,
-               image_embeddingdir=IMAGE_EMBEDDINGDIR,
-               ppi_embedding_file=constants.PPI_EMBEDDING_FILE,
-               image_embedding_file=constants.IMAGE_EMBEDDING_FILE,
-               image_gene_node_attr_file=constants.IMAGE_GENE_NODE_ATTR_FILE)
+    """.format(version=cellmaps_coembedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
