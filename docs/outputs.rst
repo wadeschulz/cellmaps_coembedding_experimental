@@ -11,17 +11,49 @@ Outputs
 - ``coembedding_emd.tsv``
    This file represents the co-embedding of Protein-Protein Interaction (PPI) and image embeddings. The first column contains identifiers (either gene symbols or sample IDs) while the subsequent columns contain embedding values.
 
+.. code-block::
+
+            1	2	3	4
+    AURKB	-0.06713819	-0.027032608	-0.117943764	-0.14860943
+    BAZ1B	0.100407355	0.1299548	-0.011916596	0.02393107
+    BRD7	0.07245989	0.12707146	-0.000744308	0.023155764
+    CBX3	-0.115645304	-0.1549612	-0.08860879	-0.038656197
+    CHD1	0.016580202	0.11743456	-0.009839832	-0.008252605
+
 - ``muse_latent_x.txt``, ``muse_latent_y.txt``, ``muse_latent.txt``
    These files are outputs of the MuSE algorithm and represent the learned latent embeddings for the given data. The `x`, `y`, and combined latent representations relate to the embeddings for PPIs (`x`), images (`y`), and their co-embedded form.
 
+.. code-block::
+
+        0	1	2	3
+    AURKB	-0.7398974	-0.7328235	-0.47760928	0.799894
+    BAZ1B	0.73348	0.6329914	0.5768389	-0.866711
+    BRD7	0.7492436	0.6085141	0.48927978	-0.6845873
+    CBX3	-0.34629488	-0.85891724	-0.44887647	0.7374519
+
 - ``muse_reconstruct_x.txt``, ``muse_reconstruct_y.txt``
    The reconstructed embeddings after the MuSE training process.
+
+.. code-block::
+
+        0	1	2	3
+    AURKB	0.009274133	-0.11458938	0.58946913	0.24976397
+    BAZ1B	0.12864016	-0.1441521	0.066344105	0.16674767
+    BRD7	0.2039571	-0.13871995	0.067848556	0.16131365
+    CBX3	0.028114516	-0.11468072	0.65329766	0.2604311
 
 - ``muse.pth``
    The model related to the MuSE co-embedding process. This file allows for future loading and reuse of the model without needing to retrain it.
 
 - ``muse.txt``
    A general output from the MuSE co-embedding algorithm.
+
+.. code-block::
+
+    init_recon_epoch:0	total_loss:1372.44202	reconstruction_loss_x:44.36664	reconstruction_loss_y:52.45499
+    init_recon_epoch:1	total_loss:1372.45093	reconstruction_loss_x:43.70440	reconstruction_loss_y:53.22675
+    init_recon_epoch:2	total_loss:1369.79553	reconstruction_loss_x:42.36637	reconstruction_loss_y:52.00960
+    init_recon_epoch:3	total_loss:1368.55383	reconstruction_loss_x:42.14549	reconstruction_loss_y:51.08870
 
 Logs and Metadata
 -----------------
