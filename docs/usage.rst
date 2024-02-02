@@ -30,20 +30,26 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 .. code-block::
 
-  cellmaps_coembeddingcmd.py [outdir] [--ppi_embeddingdir PPI_EMBEDDING_DIR] [--image_embeddingdir IMAGE_EMBEDDING_DIR] [OPTIONS]
+  cellmaps_coembeddingcmd.py [outdir] [--embeddings EMBEDDING_DIR [EMBEDDING_DIR2 ...]] [OPTIONS]
 
 **Arguments**
 
 - ``outdir``
     The directory where the output will be written to.
 
-*Required*
+*Required (choose one)*
 
-- ``--ppi_embeddingdir``
-    The directory path created by `cellmaps_ppi_embedding` which has a TSV file containing the embeddings of the PPI network. For each row, the first value is assumed to be the gene symbol followed by the embeddings.
+- ``--embeddings EMBEDDINGS_DIR``
+    Paths to directories containing image and/or PPI embeddings. The directory should have a TSV file, named `image_emd.tsv` or `ppi_emd.tsv`.
+    Second option is to provide paths to specific TSV files.
 
-- ``--image_embeddingdir``
-    The directory path created by `cellmaps_image_embedding` which has a TSV file containing the embeddings of the IF images. For each row, the first value is assumed to be the sample ID followed by the embeddings.
+    **Deprecated Flags (still functional but no longer required):**
+
+        - ``--ppi_embeddingdir``
+            The directory path created by `cellmaps_ppi_embedding` which has a TSV file containing the embeddings of the PPI network. For each row, the first value is assumed to be the gene symbol followed by the embeddings.
+
+        - ``--image_embeddingdir``
+            The directory path created by `cellmaps_image_embedding` which has a TSV file containing the embeddings of the IF images. For each row, the first value is assumed to be the sample ID followed by the embeddings.
 
 *Optional*
 
