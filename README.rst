@@ -113,7 +113,7 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 .. code-block::
  
-   cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --image_embeddingdir ./cellmaps_image_embedding_outdir --ppi_embeddingdir ./cellmaps_ppi_embedding_outdir 
+   cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --embeddings ./cellmaps_image_embedding_outdir ./cellmaps_ppi_embedding_outdir
 
 
 
