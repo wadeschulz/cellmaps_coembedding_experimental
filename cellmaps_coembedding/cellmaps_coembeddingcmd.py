@@ -40,10 +40,10 @@ def _parse_arguments(desc, args):
                         help='Algorithm to use for coembedding. Defaults to auto.')
     parser.add_argument(PPI_EMBEDDINGDIR,
                         help='Directory aka rocrate where ppi '
-                             'embedding file resides (Deprecated: use embeddings flag)')
+                             'embedding file resides (Deprecated: use --embeddings flag)')
     parser.add_argument(IMAGE_EMBEDDINGDIR,
                         help='Directory aka rocrate image embedding '
-                             'file resides (Deprecated: use embeddings flag)')
+                             'file resides (Deprecated: use --embeddings flag)')
     parser.add_argument('--latent_dimension', type=int, default=128,
                         help='Output dimension of embedding')
     parser.add_argument('--n_epochs_init', default=200, type=int,
@@ -137,7 +137,7 @@ def main(args):
             theargs.ppi_embeddingdir = embed_dirs[0]
             theargs.image_embeddingdir = embed_dirs[1]
         else:
-            raise CellmapsCoEmbeddingError('Currently, only two directories are supported with --embeddings')
+            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with --embeddings')
 
     if theargs.ppi_embeddingdir and theargs.image_embeddingdir:
         input_dirs = [theargs.image_embeddingdir, theargs.ppi_embeddingdir]
