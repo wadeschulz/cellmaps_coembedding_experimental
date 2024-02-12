@@ -13,6 +13,10 @@ Cell Maps CoEmbedder
         :target: https://cellmaps-coembedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+.. image:: https://zenodo.org/badge/620523316.svg
+        :target: https://zenodo.org/doi/10.5281/zenodo.10651873
+        :alt: Zenodo DOI badge
+
 Creates Coembedding from `Cell Maps ImmunoFluorscent Image Embedder <https://cellmaps-image-embedding.readthedocs.io>`__
 and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ using an implementation of `MUSE <https://github.com/AltschulerWu-Lab/MUSE>`__
 
