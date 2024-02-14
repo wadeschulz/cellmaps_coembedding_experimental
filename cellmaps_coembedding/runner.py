@@ -214,10 +214,15 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         if self._jackknife_percent > 0:
             with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
                 file.write('\n'.join(np.array(name_index)[test_subset]))
-
+        modality_data = []
+        modality_data.append(data_x)
+        modality_data.append(data_y)
+        modality_names = self._embedding_names
+       
+        
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
-                                                     data_x=ppi_embeddings_array,
-                                                     data_y=image_embeddings_array,
+                                                     modality_data=modality_data,
+                                                     modality_names=modality_names,
                                                      name_index=name_index,
                                                      test_subset=test_subset,
                                                      latent_dim=self.get_dimensions(),
@@ -230,7 +235,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
             row.extend(embedding)
             yield row
 
-
+                        
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generates a fake coembedding

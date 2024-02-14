@@ -13,7 +13,7 @@ from .triplet_loss import *
 
 
 #globals
-sourceFile = ''
+source_file = ''
 lambda_regul = 5
 hard_loss = False
 triplet_margin = 0.1
@@ -27,6 +27,18 @@ def make_matrix_from_labels(labels):
             for geneB in genes_in_cluster:
                 M[geneA,geneB] = 1    
     return M
+
+def write_result_to_file(filepath, data, indexes):
+    dims = data.shape[1]
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f, delimiter='\t')
+        header_line = ['']
+        header_line.extend([x for x in range(1, dims)])
+        writer.writerow(header_line)
+        for i in np.arange(len(indexes))
+            row = indexes[i]
+            row.extend(data[i])
+            writer.writerow(row)
 
 def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super, train_name, train, device):
     
@@ -111,8 +123,9 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
 
     
     
-def muse_fit_predict(resultsdir, data_x,
-                     data_y,
+def muse_fit_predict(resultsdir,
+                     modality_data = [],
+                     modality_names = [],
                      name_index = [],
                      label_x = [],
                      label_y = [],
@@ -125,12 +138,21 @@ def muse_fit_predict(resultsdir, data_x,
                      lambda_super=5, triplet_margin=0.1, hard_loss=False, l2_norm = True, k=10, dropout=0.25, save_update_epochs=False):
     
     
+    #get data 
+    data_x = modality_data[0]
+    data_y = modality_data[1]
+    num_data_modalities = len(modality_data)
+    if len(modality_names) != num_data_modalities:
+        modality_names = ['modality_'.format(x) for x in np.arange(num_data_modalities)]
+    name_x = modality_names[0]
+    name_y = modalities_names[1]
+    
     # parameter setting for neural network
     n_hidden = 128  # number of hidden node in neural network
     learn_rate = 1e-4  # learning rate in the optimization
     batch_size = 64  # number of cells in the training batch
     cluster_update_epoch = 50
-    sourceFile = open('{}.txt'.format(resultsdir), 'w')
+    source_file = open('{}.txt'.format(resultsdir), 'w')
     
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -138,7 +160,7 @@ def muse_fit_predict(resultsdir, data_x,
         torch.cuda.get_device_name()
         
     # set globals  (same across all training)
-    globals()['sourceFile'] = sourceFile
+    globals()['source_file'] = source_file
     globals()['lambda_regul'] = lambda_regul
     globals()['triplet_margin'] = triplet_margin
     globals()['hard_loss'] = hard_loss
@@ -231,12 +253,16 @@ def muse_fit_predict(resultsdir, data_x,
 
             if save_update_epochs:
                 torch.save(model.state_dict(), '{}_{}.pth'.format(resultsdir, epoch))
-                pd.DataFrame(latent.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_{}.txt'.format(resultsdir, epoch))
-                pd.DataFrame(reconstruct_x.detach().cpu().numpy(), index = name_index).to_csv('{}_reconstruct_x_{}.txt'.format(resultsdir, epoch))
-                pd.DataFrame(reconstruct_y.detach().cpu().numpy(), index = name_index).to_csv('{}_reconstruct_y_{}.txt'.format(resultsdir, epoch))
-                pd.DataFrame(latent_x.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_x_{}.txt'.format(resultsdir, epoch))
-                pd.DataFrame(latent_y.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_y_{}.txt'.format(resultsdir, epoch))
-            
+                write_result_to_file('{}_latent_{}.txt'.format(resultsdir, epoch), latent.detach().cpu().numpy(), name_index)
+                write_result_to_file('{}_reconstruct_{}_{}.txt'.format(resultsdir, name_x, epoch), 
+                                     reconstruct_x.detach().cpu().numpy(), name_index)
+                write_result_to_file('{}_reconstruct_{}_{}.txt'.format(resultsdir, name_y, epoch), 
+                                     reconstruct_y.detach().cpu().numpy(), name_index)
+                write_result_to_file('{}_latent_{}_{}.txt'.format(resultsdir, name_x, epoch), 
+                                     latent_x.detach().cpu().numpy(), name_index)
+                write_result_to_file('{}_latent_{}_{}.txt'.format(resultsdir, name_y, epoch), 
+                                     latent_y.detach().cpu().numpy(), name_index)
+                
             # update clusters (only on training data)
             if create_label_x:
                 train_latent_x = latent_x[train_subset]
@@ -254,12 +280,16 @@ def muse_fit_predict(resultsdir, data_x,
 
     detached_embeddings = latent.detach().cpu().numpy()
     torch.save(model.state_dict(), '{}.pth'.format(resultsdir))
-    pd.DataFrame(detached_embeddings, index = name_index).to_csv('{}_latent.txt'.format(resultsdir))
-    pd.DataFrame(reconstruct_x.detach().cpu().numpy(), index = name_index).to_csv('{}_reconstruct_x.txt'.format(resultsdir))
-    pd.DataFrame(reconstruct_y.detach().cpu().numpy(), index = name_index).to_csv('{}_reconstruct_y.txt'.format(resultsdir))
-    pd.DataFrame(latent_x.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_x.txt'.format(resultsdir))
-    pd.DataFrame(latent_y.detach().cpu().numpy(), index = name_index).to_csv('{}_latent_y.txt'.format(resultsdir))
+    write_result_to_file('{}_latent.txt'.format(resultsdir), latent.detach().cpu().numpy(), name_index)
+    write_result_to_file('{}_reconstruct_{}.txt'.format(resultsdir, name_x), 
+                         reconstruct_x.detach().cpu().numpy(), name_index)
+    write_result_to_file('{}_reconstruct_{}.txt'.format(resultsdir, name_y), 
+                         reconstruct_y.detach().cpu().numpy(), name_index)
+    write_result_to_file('{}_latent_{}.txt'.format(resultsdir, name_x), 
+                         latent_x.detach().cpu().numpy(), name_index)
+    write_result_to_file('{}_latent_{}.txt'.format(resultsdir, name_y), 
+                         latent_y.detach().cpu().numpy(), name_index)
     
-    sourceFile.close()
+    source_file.close()
 
     return model, detached_embeddings
