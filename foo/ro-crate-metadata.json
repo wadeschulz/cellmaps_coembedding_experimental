@@ -1,0 +1,64 @@
+{
+  "@id": "746f307b-091c-4895-aff1-30f24c65a597:rocrate::foo",
+  "@context": {
+    "EVI": "https://w3id.org/EVI#",
+    "@vocab": "https://schema.org/"
+  },
+  "@type": "Dataset",
+  "name": "Coembedding tool",
+  "description": "Example input dataset Coembedding",
+  "keywords": [
+    "coembedding"
+  ],
+  "isPartOf": [
+    {
+      "@id": "ark:/Example",
+      "@type": "Organization",
+      "name": "Example"
+    },
+    {
+      "@id": "ark:/Example/Example",
+      "@type": "Project",
+      "name": "Example"
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "746f307b-091c-4895-aff1-30f24c65a597:rocrate::foo/ro-crate-metadata.json",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "about": {
+        "@id": "746f307b-091c-4895-aff1-30f24c65a597:rocrate::foo"
+      },
+      "isPartOf": {
+        "@id": "746f307b-091c-4895-aff1-30f24c65a597:rocrate::foo"
+      },
+      "contentUrl": "file:///cellar/users/lvschaffer/GitClones/cellmaps/cellmaps_coembedding/foo/ro-crate-metadata.json"
+    },
+    {
+      "@id": "c5f47249-3398-484f-b122-9a17c1a26a61:software::foo",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Software",
+      "url": "https://github.com/idekerlab/cellmaps_coembedding",
+      "name": "cellmaps_coembedding",
+      "keywords": [
+        "coembedding",
+        "tools",
+        "cellmaps_coembedding"
+      ],
+      "description": "Example input dataset Coembedding A tool to generate coembeddings from IF image embeddings and PPI network embeddings",
+      "author": "Cell Maps team",
+      "dateModified": "2024-02-15",
+      "version": "0.1.0",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "format": "py",
+      "usedByComputation": [],
+      "contentUrl": "https://github.com/idekerlab/cellmaps_coembedding"
+    }
+  ]
+}

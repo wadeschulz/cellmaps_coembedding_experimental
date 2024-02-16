@@ -116,6 +116,18 @@ def main(args):
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
 
+    if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embeddings:
+        raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
+                                       'not both')
+    embed_files = None
+    if theargs.embeddings:
+        if len(theargs.embeddings) > 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
+            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with --embeddings')
+
+    if not (theargs.ppi_embeddingdir and theargs.image_embeddingdir) and not theargs.embeddings:
+        raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
+                                       'or --embeddings are required')
+        
     try:
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedding:
@@ -135,7 +147,9 @@ def main(args):
                                            embedding_files=theargs.embeddings,
                                            embedding_names=theargs.embedding_names)
         
+        inputdirs=gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,
+                                  inputdirs=inputdirs,
                                   embedding_generator=gen,
                                   skip_logging=theargs.skip_logging,
                                   input_data_dict=theargs.__dict__).run()
