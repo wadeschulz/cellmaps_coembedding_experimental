@@ -94,7 +94,7 @@ class EmbeddingGenerator(object):
         names = []
             
         for filepath in embedding_filenames:
-            embedding_file, embedding_name = self._get_embedding_file_and_name_from_dirs(filepath)
+            embedding_file, embedding_name = self._get_embedding_file_and_name(filepath)
             embeddings.append(embedding_file)
             names.append(embedding_name)
            

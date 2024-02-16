@@ -134,7 +134,7 @@ def main(args):
             gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
                                            image_embeddingdir=theargs.image_embeddingdir,
-                                           embedding_files=theargs.embeddings,
+                                           embedding_filenames=theargs.embeddings,
                                            embedding_names=theargs.embedding_names)
         else:
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
@@ -144,7 +144,7 @@ def main(args):
                                            n_epochs_init=theargs.n_epochs_init,
                                            jackknife_percent=theargs.jackknife_percent,
                                            outdir=os.path.abspath(theargs.outdir),
-                                           embedding_files=theargs.embeddings,
+                                           embedding_filenames=theargs.embeddings,
                                            embedding_names=theargs.embedding_names)
         
         inputdirs=gen.get_embedding_inputdirs()
