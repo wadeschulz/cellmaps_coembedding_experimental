@@ -35,7 +35,9 @@ def _parse_arguments(desc, args):
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument('--embeddings', nargs='+',
-                        help='Directories with embeddings. Requires two or more paths.')
+                        help='Filepath to .tsv with embeddings. Requires two or more paths.')
+    parser.add_argument('--embedding_names', nargs='+',
+                        help='Name corresponding to each filepath input in --embeddings. ')
     parser.add_argument('--algorithm', choices=['auto', 'muse'], default='auto',
                         help='Algorithm to use for coembedding. Defaults to auto.')
     parser.add_argument(PPI_EMBEDDINGDIR,
@@ -78,19 +80,6 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def set_embedding_dirs(embeddings):
-    dirs = []
-    file_names = []
-
-    for embed in embeddings:
-        if os.path.isfile(embed):
-            dirs.append(os.path.dirname(embed))
-            file_names.append(os.path.basename(embed))
-        else:
-            dirs.append(embed)
-            file_names.append(None)
-
-    return dirs, file_names if file_names else None
 
 
 def main(args):
@@ -107,7 +96,7 @@ def main(args):
     desc = """
     Version {version}
 
-    Given image and PPI embeddings, this tool generates a co-embedding using
+    Given input embeddings, this tool generates a co-embedding using either a UniEmbed algorith or
     a variant of MuSE algorithm within this code base from
     Feng Bao @ Altschuler & Wu Lab @ UCSF 2022
     that is under MIT License.
@@ -127,42 +116,26 @@ def main(args):
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
 
-    if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embeddings:
-        raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
-                                       'not both')
-    embed_files = None
-    if theargs.embeddings:
-        if len(theargs.embeddings) == 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
-            embed_dirs, embed_files = set_embedding_dirs(theargs.embeddings)
-            theargs.ppi_embeddingdir = embed_dirs[0]
-            theargs.image_embeddingdir = embed_dirs[1]
-        else:
-            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with --embeddings')
-
-    if theargs.ppi_embeddingdir and theargs.image_embeddingdir:
-        input_dirs = [theargs.image_embeddingdir, theargs.ppi_embeddingdir]
-    else:
-        raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
-                                       'or --embeddings are required')
-
     try:
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedding:
             gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
                                            image_embeddingdir=theargs.image_embeddingdir,
-                                           embedding_filenames=embed_files)
+                                           embedding_files=theargs.embeddings,
+                                           embedding_names=theargs.embedding_names)
         else:
             gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                           ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                           image_embeddingdir=theargs.image_embeddingdir,
                                            n_epochs=theargs.n_epochs,
                                            n_epochs_init=theargs.n_epochs_init,
                                            jackknife_percent=theargs.jackknife_percent,
                                            outdir=os.path.abspath(theargs.outdir),
-                                           ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir,
-                                           embedding_filenames=embed_files)
+                                           embedding_files=theargs.embeddings,
+                                           embedding_names=theargs.embedding_names)
+        
         return CellmapsCoEmbedder(outdir=theargs.outdir,
-                                  inputdirs=input_dirs,
                                   embedding_generator=gen,
                                   skip_logging=theargs.skip_logging,
                                   input_data_dict=theargs.__dict__).run()

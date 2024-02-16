@@ -35,7 +35,7 @@ def write_result_to_file(filepath, data, indexes):
         header_line = ['']
         header_line.extend([x for x in range(1, dims)])
         writer.writerow(header_line)
-        for i in np.arange(len(indexes))
+        for i in np.arange(len(indexes)):
             row = indexes[i]
             row.extend(data[i])
             writer.writerow(row)
@@ -118,7 +118,7 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
         fraction_easy_ys.append(fraction_easy_y.detach().cpu().numpy())
         
     print( train_name+"_epoch:%d\ttotal_loss:%03.5f\treconstruction_loss_x:%03.5f\treconstruction_loss_y:%03.5f\tsparse_penalty:%03.5f\tx_triplet_loss_batch_hard:%03.5f\ty_triplet_loss_batch_hard:%03.5f\tx_triplet_loss_batch_all:%03.5f\ty_triplet_loss_batch_all:%03.5f\tx_fraction_hard:%03.5f\ty_fraction_hard:%03.5f\tx_fraction_semi:%03.5f\ty_fraction_semi:%03.5f\tx_fraction_easy:%03.5f\ty_fraction_easy:%03.5f"
-        % (epoch, np.mean(L_totals), np.mean(L_reconstruction_xs), np.mean(L_reconstruction_ys), np.mean(L_weights), np.mean(L_trip_batch_hard_xs), np.mean(L_trip_batch_hard_ys), np.mean(L_trip_batch_all_xs), np.mean(L_trip_batch_all_ys), np.mean(fraction_hard_xs), np.mean(fraction_hard_ys),  np.mean(fraction_semi_xs), np.mean(fraction_semi_ys), np.mean(fraction_easy_xs), np.mean(fraction_easy_ys)), file = sourceFile)    
+        % (epoch, np.mean(L_totals), np.mean(L_reconstruction_xs), np.mean(L_reconstruction_ys), np.mean(L_weights), np.mean(L_trip_batch_hard_xs), np.mean(L_trip_batch_hard_ys), np.mean(L_trip_batch_all_xs), np.mean(L_trip_batch_all_ys), np.mean(fraction_hard_xs), np.mean(fraction_hard_ys),  np.mean(fraction_semi_xs), np.mean(fraction_semi_ys), np.mean(fraction_easy_xs), np.mean(fraction_easy_ys)), file = source_file)    
     
 
     
@@ -145,7 +145,7 @@ def muse_fit_predict(resultsdir,
     if len(modality_names) != num_data_modalities:
         modality_names = ['modality_'.format(x) for x in np.arange(num_data_modalities)]
     name_x = modality_names[0]
-    name_y = modalities_names[1]
+    name_y = modality_names[1]
     
     # parameter setting for neural network
     n_hidden = 128  # number of hidden node in neural network

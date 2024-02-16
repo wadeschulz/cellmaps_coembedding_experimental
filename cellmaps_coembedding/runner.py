@@ -30,73 +30,59 @@ class EmbeddingGenerator(object):
     def __init__(self, dimensions=1024,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
-                 embedding_filenames=None
+                 embedding_files=None,
+                 embedding_names=None
                  ):
         """
         Constructor
         """
         self._dimensions = dimensions
-        self._ppi_embeddingdir = ppi_embeddingdir
-        self._image_embeddingdir = image_embeddingdir
-        self._embedding_filenames = embedding_filenames
-        self._embedding_names = []
+        self._embedding_files, self._embedding_names = self._get_embedding_files_and_names(embedding_files, ppi_embeddingdir, image_embeddingdir, embedding_names)
 
-    def _get_embedding_file(self, embedding_dir):
+    def _get_embedding_file_from_dirs(self, embedding_dir):
         path_ppi = os.path.join(embedding_dir,
                                 constants.PPI_EMBEDDING_FILE)
         if os.path.exists(path_ppi):
-            self._embedding_names.append('PPI')
             return path_ppi
         path_image = os.path.join(embedding_dir,
                                   constants.IMAGE_EMBEDDING_FILE)
         if os.path.exists(path_image):
-            self._embedding_names.append('image')
             return path_image
         raise CellmapsCoEmbeddingError(f'Embedding file not found in {embedding_dir}')
+        
+   
+    def _get_embedding_files_and_names(self, embedding_files, ppi_embeddingdir, image_embeddingdir, embedding_names):
+        
+        embeddings = []
+        names = []
 
-    def _get_ppi_embeddings_file(self):
-        """
-
-        :return:
-        """
-        if self._embedding_filenames is None or self._embedding_filenames[0] is None:
-            return self._get_embedding_file(self._ppi_embeddingdir)
+        if (ppi_embeddingdir or image_embeddingdir):
+            if  embedding_files:
+                raise CellmapsCoEmbeddingError('Use either ppi_embeddingdir and image_embeddingdir or embeddings, '
+                                               'not both')
+            ppi_embedding_file = self._get_embedding_file_from_dirs(ppi_embeddingdir)
+            image_embedding_file = self._get_embedding_file_from_dirs(image_embeddingdir)
+            embeddings = [ppi_embedding_file, image_embedding_file]
+            if embedding_names is None:
+                names = ['PPI', 'image']
         else:
-            self._embedding_names.append(self._embedding_filenames[0])
-            return os.path.join(self._ppi_embeddingdir, self._embedding_filenames[0])
-
-    def _get_ppi_embeddings(self):
+            embeddings = embedding_files
+            names = embedding_names
+            
+        if names is None:
+            names = ['emd_{}'.format(x) for x in np.arange(len(embedding_files))]
+        if len(names) != len(embeddings):
+            raise CellmapsCoEmbeddingError('Input list of embedding names does not match number of embeddings.')
+        
+        return embeddings, names
+         
+    def get_embedding_files(self):
+        return self._embedding_files   
+             
+    
+    def _get_set_of_gene_names(self, embedding):
         """
-        Gets PPI or image embedding from directory specified as ppi embedding set via input
-
-        :return: embeddings
-        :rtype: list
-        """
-        return self._get_embedding(self._get_ppi_embeddings_file())
-
-    def _get_image_embeddings_file(self):
-        """
-
-        :return:
-        """
-        if self._embedding_filenames is None or self._embedding_filenames[1] is None:
-            return self._get_embedding_file(self._image_embeddingdir)
-        else:
-            self._embedding_names.append(self._embedding_filenames[1])
-            return os.path.join(self._image_embeddingdir, self._embedding_filenames[1])
-
-    def _get_image_embeddings(self):
-        """
-        Gets PPI or image embedding from directory specified as ppi embedding set via input
-
-        :return: embeddings
-        :rtype: list
-        """
-        return self._get_embedding(self._get_image_embeddings_file())
-
-    def _get_set_of_embedding_names(self, embedding):
-        """
-        Get a set of embedding names from **embedding**
+        Get a set of gene names from **embedding**
 
         :param embedding:
         :return:
@@ -106,7 +92,7 @@ class EmbeddingGenerator(object):
             name_set.add(entry[0])
         return name_set
 
-    def _get_embedding(self, embedding_file):
+    def _get_embeddings(self, embedding_file):
         """
         Gets embedding as a list or lists
 
@@ -153,10 +139,11 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
                  n_epochs_init=200,
                  outdir=None,
+                 embedding_files=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
+                 embedding_names=None,
                  jackknife_percent=0,
-                 embedding_filenames=None,
                  ):
         """
 
@@ -171,10 +158,11 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         :param image_embeddingdir:
         :param jackknife_percent: percent of data to withhold from training
         """
-        super().__init__(dimensions=dimensions,
+        super().__init__(dimensions=dimensions, embedding_files=embedding_files,
                          ppi_embeddingdir=ppi_embeddingdir,
                          image_embeddingdir=image_embeddingdir,
-                         embedding_filenames=embedding_filenames)
+                         embedding_names=embedding_names
+                         )
         self._outdir = outdir
         self._k = k
         self.triplet_margin = triplet_margin
@@ -188,41 +176,37 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
 
         :return:
         """
-        ppi_embeddings = self._get_ppi_embeddings()
-        ppi_embeddings.sort(key=lambda x: x[0])
-        logger.info('There are ' + str(len(ppi_embeddings)) + ' ' + self._embedding_names[0] + ' embeddings')
-        image_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(image_embeddings)) + ' ' + self._embedding_names[1] + ' embeddings')
-        image_embeddings.sort(key=lambda x: x[0])
-        ppi_name_set = self._get_set_of_embedding_names(ppi_embeddings)
-        image_name_set = self._get_set_of_embedding_names(image_embeddings)
-        intersection_name_set = ppi_name_set.intersection(image_name_set)
+        embeddings = [self._get_embeddings(x) for x in self._embedding_files]
+        for index in np.arange(len(embeddings)):
+            e = embeddings[index]
+            e.sort(key=lambda x: x[0])
+            logger.info('There are ' + str(len(e)) + ' ' + self._embedding_names[index] + ' embeddings')
+        
+        embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
+        intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
+       
         logger.info('There are ' +
                     str(len(intersection_name_set)) +
                     ' overlapping embeddings')
 
-        name_index = [x[0] for x in ppi_embeddings if x[0] in intersection_name_set]
+        name_index = [x[0] for x in embeddings[0] if x[0] in intersection_name_set]
 
-        ppi_embeddings_array = np.array(
-            [np.array([float(e) for e in xi[1:]]) for xi in ppi_embeddings if xi[0] in intersection_name_set])
-        image_embeddings_array = np.array(
-            [np.array([float(e) for e in xi[1:]]) for xi in image_embeddings if xi[0] in intersection_name_set])
-
+        embedding_data = []
+        for e in embeddings:
+            embedding_data.append(np.array([np.array([float(v) for v in xi[1:]]) for xi in e if xi[0] in intersection_name_set]))
+        
         resultsdir = os.path.join(self._outdir, 'muse')
 
         test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
         if self._jackknife_percent > 0:
             with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
                 file.write('\n'.join(np.array(name_index)[test_subset]))
-        modality_data = []
-        modality_data.append(data_x)
-        modality_data.append(data_y)
-        modality_names = self._embedding_names
-       
-        
+
+        embedding_names = self._embedding_names
+               
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
-                                                     modality_data=modality_data,
-                                                     modality_names=modality_names,
+                                                     modality_data=embedding_data,
+                                                     modality_names=embedding_names,
                                                      name_index=name_index,
                                                      test_subset=test_subset,
                                                      latent_dim=self.get_dimensions(),
@@ -238,11 +222,11 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                         
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
-    Generates a fake coembedding
+    Generates a fake coembedding for intersection of embedding dirs
     """
 
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
-                 image_embeddingdir=None, embedding_filenames=None):
+                 image_embeddingdir=None, embedding_files=None, embedding_names=None):
         """
         Constructor
         :param dimensions:
@@ -250,7 +234,8 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
                          image_embeddingdir=image_embeddingdir,
-                         embedding_filenames=embedding_filenames)
+                         embedding_files=embedding_files,
+                        embedding_names=embedding_names)
 
     def get_next_embedding(self):
         """
@@ -258,18 +243,20 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
 
         :return:
         """
-        ppi_embeddings = self._get_ppi_embeddings()
-        logger.info('There are ' + str(len(ppi_embeddings)) + ' ' + self._embedding_names[0] + ' embeddings')
-        image_embeddings = self._get_image_embeddings()
-        logger.info('There are ' + str(len(image_embeddings)) + ' ' + self._embedding_names[1] + ' embeddings')
-
-        ppi_embedding_names = self._get_set_of_embedding_names(ppi_embeddings)
-        image_embedding_names = self._get_set_of_embedding_names(image_embeddings)
-        intersection_embedding_names = ppi_embedding_names.intersection(image_embedding_names)
+        modality_embeddings = [self._get_embeddings(x) in self._embedding_files]
+        for index in np.arange(len(modality_embeddings)):
+            embeddings = modality_embeddings[index]
+            embeddings.sort(key=lambda x: x[0])
+            logger.info('There are ' + str(len(embeddings)) + ' ' + self._embedding_names[index] + ' embeddings')
+            
+        modality_name_sets = [self._get_set_of_embedding_names(x) for x in modality_embeddings]
+        intersection_name_set = modality_name_sets[0].intersection(modality_name_sets[1])
+       
         logger.info('There are ' +
-                    str(len(intersection_embedding_names)) +
+                    str(len(intersection_name_set)) +
                     ' overlapping embeddings')
-        for embed_name in intersection_embedding_names:
+        
+        for embed_name in intersection_name_set:
             row = [embed_name]
             row.extend([random.random() for x in range(0, self.get_dimensions())])
             yield row
@@ -281,7 +268,6 @@ class CellmapsCoEmbedder(object):
     """
 
     def __init__(self, outdir=None,
-                 inputdirs=None,
                  embedding_generator=None,
                  name=None,
                  organization_name=None,
@@ -311,7 +297,6 @@ class CellmapsCoEmbedder(object):
         if outdir is None:
             raise CellmapsCoEmbeddingError('outdir is None')
         self._outdir = os.path.abspath(outdir)
-        self._inputdirs = inputdirs
         self._start_time = int(time.time())
         self._end_time = -1
         self._name = name
@@ -321,6 +306,7 @@ class CellmapsCoEmbedder(object):
         self._keywords = None
         self._description = None
         self._embedding_generator = embedding_generator
+        self._inputdirs = self._get_embedding_dirs(self._embedding_generator.get_embedding_files()) 
         self._input_data_dict = input_data_dict
         self._softwareid = None
         self._coembedding_id = None
@@ -333,6 +319,17 @@ class CellmapsCoEmbedder(object):
 
         logger.debug('In constructor')
 
+    def _get_embedding_dirs(self, embeddings):
+        dirs = []
+        for embed in embeddings:
+            if os.path.isfile(embed):
+                dirs.append(os.path.dirname(embed))
+            else:
+                dirs.append(embed)
+
+        return dirs
+    
+    
     def _update_provenance_fields(self):
         """
 
