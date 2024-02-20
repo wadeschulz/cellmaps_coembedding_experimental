@@ -10,7 +10,7 @@ from .file_utils import *
 from .df_utils import *
 from .architecture import *
 from .triplet_loss import *
-
+import csv
 
 #globals
 source_file = ''
@@ -36,7 +36,7 @@ def write_result_to_file(filepath, data, indexes):
         header_line.extend([x for x in range(1, dims)])
         writer.writerow(header_line)
         for i in np.arange(len(indexes)):
-            row = indexes[i]
+            row = [indexes[i]]
             row.extend(data[i])
             writer.writerow(row)
 
