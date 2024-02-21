@@ -30,31 +30,36 @@ class EmbeddingGenerator(object):
     def __init__(self, dimensions=1024,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
-                 embedding_filenames=None,
+                 embeddings=None,
                  embedding_names=None):
         """
         Constructor
         """
         self._dimensions = dimensions
-        self._embedding_filenames = embedding_filenames
         self._embedding_names = embedding_names
-        self._set_embedding_filenames(embedding_filenames, ppi_embeddingdir, image_embeddingdir)
+        self._initialize_embeddings(embeddings, ppi_embeddingdir, image_embeddingdir)
 
-    def _set_embedding_filenames(self, embedding_filenames, ppi_embeddingdir, image_embeddingdir):
+    def _initialize_embeddings(self, embeddings, ppi_embeddingdir, image_embeddingdir):
         """
-        Set embedding files from inputs
-        :param names: embedding_files, ppi_embeddingdir, image_embeddingdir
-        :type embedding_file: str
-        :return:
+        Initializes the embedding locations based on the provided inputs.
+
+        :param embeddings: A list of paths to embedding files or directories with tsv files.
+        :type embeddings: list[str] or None
+        :param ppi_embeddingdir: The directory path where PPI (Protein-Protein Interaction) embeddings are stored.
+        :type ppi_embeddingdir: str or None
+        :param image_embeddingdir: The directory path where image embeddings are stored.
+        :type image_embeddingdir: str or None
+        :raises CellmapsCoEmbeddingError: If both embeddings and flags ppi_embeddingdir or image_embeddingdir
+                                          are provided, an error is raised to prevent ambiguity.
         """
-        if ppi_embeddingdir or image_embeddingdir:
-            if self._embedding_filenames:
-                raise CellmapsCoEmbeddingError('Use either ppi_embeddingdir and image_embeddingdir or embeddings, '
-                                               'not both')
-            else:
-                self._embedding_filenames = [ppi_embeddingdir, image_embeddingdir]
-        else:
-            self._embedding_filenames = embedding_filenames
+        if len(embeddings) < 2 and not (ppi_embeddingdir and image_embeddingdir):
+            raise CellmapsCoEmbeddingError(f'Coembedding generator requires two arguments. '
+                                           f'Provide two files or directories in embedding parameter or '
+                                           f'both ppi_embeddingdir and image_embeddingdir')
+        if (ppi_embeddingdir or image_embeddingdir) and embeddings:
+            raise CellmapsCoEmbeddingError('Use either ppi_embeddingdir and image_embeddingdir or embeddings, '
+                                           'not both')
+        self._embeddings = embeddings if embeddings is not None else [ppi_embeddingdir, image_embeddingdir]
 
     def _get_embedding_file_and_name(self, embedding_dir):
         """
@@ -125,7 +130,7 @@ class EmbeddingGenerator(object):
         return unique_names
 
     def get_embedding_inputdirs(self):
-        return [os.path.dirname(file) for file in self._embedding_filenames]
+        return [os.path.dirname(file) if not os.path.isdir(file) else file for file in self._embeddings]
 
     def _get_set_of_gene_names(self, embedding):
         """
@@ -164,7 +169,7 @@ class EmbeddingGenerator(object):
         :rtype: list, list
         """
         embeddings = []
-        embedding_files, names = self._get_embedding_files_and_names(self._embedding_filenames, self._embedding_names)
+        embedding_files, names = self._get_embedding_files_and_names(self._embeddings, self._embedding_names)
         for file in embedding_files:
             embeddings.append(self._get_embeddings_from_file(file))
 
@@ -200,7 +205,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
                  n_epochs_init=200,
                  outdir=None,
-                 embedding_filenames=None,
+                 embeddings=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embedding_names=None,
@@ -219,7 +224,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         :param image_embeddingdir:
         :param jackknife_percent: percent of data to withhold from training
         """
-        super().__init__(dimensions=dimensions, embedding_filenames=embedding_filenames,
+        super().__init__(dimensions=dimensions, embeddings=embeddings,
                          ppi_embeddingdir=ppi_embeddingdir,
                          image_embeddingdir=image_embeddingdir,
                          embedding_names=embedding_names
@@ -289,7 +294,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
 
     def __init__(self, dimensions=128, ppi_embeddingdir=None,
-                 image_embeddingdir=None, embedding_filenames=None, embedding_names=None):
+                 image_embeddingdir=None, embeddings=None, embedding_names=None):
         """
         Constructor
         :param dimensions:
@@ -297,7 +302,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
         super().__init__(dimensions=dimensions,
                          ppi_embeddingdir=ppi_embeddingdir,
                          image_embeddingdir=image_embeddingdir,
-                         embedding_filenames=embedding_filenames,
+                         embeddings=embeddings,
                          embedding_names=embedding_names)
 
     def get_next_embedding(self):
