@@ -52,7 +52,7 @@ class EmbeddingGenerator(object):
         :raises CellmapsCoEmbeddingError: If both embeddings and flags ppi_embeddingdir or image_embeddingdir
                                           are provided, an error is raised to prevent ambiguity.
         """
-        if len(embeddings) < 2 and not (ppi_embeddingdir and image_embeddingdir):
+        if (embeddings is not None and len(embeddings) < 2) and not (ppi_embeddingdir and image_embeddingdir):
             raise CellmapsCoEmbeddingError(f'Coembedding generator requires two arguments. '
                                            f'Provide two files or directories in embedding parameter or '
                                            f'both ppi_embeddingdir and image_embeddingdir')
