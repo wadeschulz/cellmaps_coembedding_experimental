@@ -80,8 +80,6 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-
-
 def main(args):
     """
     Main entry point for program
@@ -102,14 +100,14 @@ def main(args):
     that is under MIT License.
 
     To run this tool requires that an output directory be specified and two embeddings
-    be set via --embeddings flag. The values passed to --embeddings can be an ro-crate 
+    be set via --embeddings flag. The values passed to --embeddings can be an ro-crate
     containing either a ppi_emd.tsv or image_emd.tsv file or a path to a TSV file.
-    
-    It is assumed these files are tab delimited embeddings and for each row, 
-    first value is assumed to be sample ID followed by the embeddings separated by 
-    tabs. The first row is assumed to be a header. 
 
-    
+    It is assumed these files are tab delimited embeddings and for each row,
+    first value is assumed to be sample ID followed by the embeddings separated by
+    tabs. The first row is assumed to be a header.
+
+
 
     """.format(version=cellmaps_coembedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -119,7 +117,6 @@ def main(args):
     if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embeddings:
         raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
                                        'not both')
-    embed_files = None
     if theargs.embeddings:
         if len(theargs.embeddings) > 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
             raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with --embeddings')
@@ -127,7 +124,7 @@ def main(args):
     if not (theargs.ppi_embeddingdir and theargs.image_embeddingdir) and not theargs.embeddings:
         raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
                                        'or --embeddings are required')
-        
+
     try:
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedding:
@@ -146,8 +143,8 @@ def main(args):
                                            outdir=os.path.abspath(theargs.outdir),
                                            embedding_filenames=theargs.embeddings,
                                            embedding_names=theargs.embedding_names)
-        
-        inputdirs=gen.get_embedding_inputdirs()
+
+        inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,
                                   inputdirs=inputdirs,
                                   embedding_generator=gen,

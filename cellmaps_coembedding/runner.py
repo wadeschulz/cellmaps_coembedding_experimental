@@ -26,11 +26,12 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+
     def __init__(self, dimensions=1024,
-                  ppi_embeddingdir=None,
-                  image_embeddingdir=None,
-                  embedding_filenames=None,
-                  embedding_names=None):
+                 ppi_embeddingdir=None,
+                 image_embeddingdir=None,
+                 embedding_filenames=None,
+                 embedding_names=None):
         """
         Constructor
         """
@@ -38,9 +39,7 @@ class EmbeddingGenerator(object):
         self._embedding_filenames = embedding_filenames
         self._embedding_names = embedding_names
         self._set_embedding_filenames(embedding_filenames, ppi_embeddingdir, image_embeddingdir)
-        
-        
-        
+
     def _set_embedding_filenames(self, embedding_filenames, ppi_embeddingdir, image_embeddingdir):
         """
         Set embedding files from inputs
@@ -53,10 +52,9 @@ class EmbeddingGenerator(object):
                 raise CellmapsCoEmbeddingError('Use either ppi_embeddingdir and image_embeddingdir or embeddings, '
                                                'not both')
             else:
-                self._embedding_filenames =  [ppi_embeddingdir, image_embeddingdir]
+                self._embedding_filenames = [ppi_embeddingdir, image_embeddingdir]
         else:
             self._embedding_filenames = embedding_filenames
-    
 
     def _get_embedding_file_and_name(self, embedding_dir):
         """
@@ -69,7 +67,7 @@ class EmbeddingGenerator(object):
         if os.path.isfile(embedding_dir):
             name = os.path.basename(embedding_dir).split('.')[0]
             return embedding_dir, name
-                
+
         path_ppi = os.path.join(embedding_dir,
                                 constants.PPI_EMBEDDING_FILE)
         if os.path.exists(path_ppi):
@@ -79,11 +77,10 @@ class EmbeddingGenerator(object):
         if os.path.exists(path_image):
             return path_image, 'image'
         raise CellmapsCoEmbeddingError(f'Embedding file not found in {embedding_dir}')
-        
-   
+
     def _get_embedding_files_and_names(self, embedding_filenames, embedding_names):
         """
-        From list of filepath or directories, get embedding filepaths and names. If no user supplied names, generate default names. 
+        From list of filepath or directories, get embedding filepaths and names. If no user supplied names, generate default names.
 
         :param names: list of names
         :type embedding_file: list
@@ -92,45 +89,44 @@ class EmbeddingGenerator(object):
         """
         embeddings = []
         names = []
-            
+
         for filepath in embedding_filenames:
             embedding_file, embedding_name = self._get_embedding_file_and_name(filepath)
             embeddings.append(embedding_file)
             names.append(embedding_name)
-           
-        if embedding_names: #if user supplied names, replace default
+
+        if embedding_names:  # if user supplied names, replace default
             names = embedding_names
         if len(names) != len(embeddings):
             raise CellmapsCoEmbeddingError('Input list of embedding names does not match number of embeddings.')
-        
+
         names = self._fix_duplicate_names(names)
-        
+
         return embeddings, names
-        
-        
+
     def _fix_duplicate_names(self, names):
         """
        Fix duplicate embedding names by adding number
 
         :param names: list of names
-        :type embedding_file: list
-        :return: names
+        :type names: list
+        :return: unique_names
         :rtype: list
         """
         counts = {}
-        result = []
+        unique_names = []
         for name in names:
             if name in counts:
                 counts[name] += 1
-                result.append('{}_{}'.format(name, counts[name]))
+                unique_names.append('{}_{}'.format(name, counts[name]))
             else:
                 counts[name] = 0
-                result.append(name)
-        return names
-        
+                unique_names.append(name)
+        return unique_names
+
     def get_embedding_inputdirs(self):
-        return [os.path.dirname(file) for file in self._embedding_filenames] 
-             
+        return [os.path.dirname(file) for file in self._embedding_filenames]
+
     def _get_set_of_gene_names(self, embedding):
         """
         Get a set of gene names from **embedding**
@@ -171,9 +167,9 @@ class EmbeddingGenerator(object):
         embedding_files, names = self._get_embedding_files_and_names(self._embedding_filenames, self._embedding_names)
         for file in embedding_files:
             embeddings.append(self._get_embeddings_from_file(file))
-        
+
         return embeddings, names
-    
+
     def get_dimensions(self):
         """
         Gets number of dimensions this embedding will generate
@@ -245,15 +241,14 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         if len(embeddings) > 2:
             raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with MUSE coembedding option')
 
-            
         for index in np.arange(len(embeddings)):
             e = embeddings[index]
             e.sort(key=lambda x: x[0])
             logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
-        
+
         embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
         intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
-       
+
         logger.info('There are ' +
                     str(len(intersection_name_set)) +
                     ' overlapping embeddings')
@@ -262,15 +257,16 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
 
         embedding_data = []
         for e in embeddings:
-            embedding_data.append(np.array([np.array([float(v) for v in xi[1:]]) for xi in e if xi[0] in intersection_name_set]))
-        
+            embedding_data.append(
+                np.array([np.array([float(v) for v in xi[1:]]) for xi in e if xi[0] in intersection_name_set]))
+
         resultsdir = os.path.join(self._outdir, 'muse')
 
         test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
         if self._jackknife_percent > 0:
             with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
                 file.write('\n'.join(np.array(name_index)[test_subset]))
-               
+
         model, res_embedings = muse.muse_fit_predict(resultsdir=resultsdir,
                                                      modality_data=embedding_data,
                                                      modality_names=embedding_names,
@@ -286,7 +282,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
             row.extend(embedding)
             yield row
 
-                        
+
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generates a fake coembedding for intersection of embedding dirs
@@ -315,14 +311,14 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
             e = embeddings[index]
             e.sort(key=lambda x: x[0])
             logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
-            
+
         name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
         intersection_name_set = name_sets[0].intersection(name_sets[1])
-       
+
         logger.info('There are ' +
                     str(len(intersection_name_set)) +
                     ' overlapping embeddings')
-        
+
         for embed_name in intersection_name_set:
             row = [embed_name]
             row.extend([random.random() for x in range(0, self.get_dimensions())])
@@ -396,8 +392,7 @@ class CellmapsCoEmbedder(object):
                 dirs.append(embed)
 
         return dirs
-    
-    
+
     def _update_provenance_fields(self):
         """
 
