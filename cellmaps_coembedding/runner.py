@@ -61,41 +61,51 @@ class EmbeddingGenerator(object):
                                            'not both')
         self._embeddings = embeddings if embeddings is not None else [ppi_embeddingdir, image_embeddingdir]
 
-    def _get_embedding_file_and_name(self, embedding_dir):
+    def _get_embedding_file_and_name(self, embedding_path):
         """
-        Get embedding file and name from directory
-        :param names: embedding_dir
-        :type embedding_dir: str
-        :return: file, name
-        :rtype: str, str
-        """
-        if os.path.isfile(embedding_dir):
-            name = os.path.basename(embedding_dir).split('.')[0]
-            return embedding_dir, name
+        Get the embedding file path and its default name based on the given path. If the path is a file,
+        it extracts the name from the file name. If the path is a directory, it looks for predefined PPI or image
+        embedding file names within this directory.
 
-        path_ppi = os.path.join(embedding_dir,
+        :param embedding_path: The path to the embedding file or directory containing the embedding file.
+        :type embedding_path: str
+        :return: A tuple containing the path to the embedding file and a default name.
+        :rtype: tuple[str, str]
+        :raises CellmapsCoEmbeddingError: If no embedding file is found in the provided directory path.
+        """
+        if os.path.isfile(embedding_path):
+            name = os.path.basename(embedding_path).split('.')[0]
+            return embedding_path, name
+
+        path_ppi = os.path.join(embedding_path,
                                 constants.PPI_EMBEDDING_FILE)
         if os.path.exists(path_ppi):
             return path_ppi, 'PPI'
-        path_image = os.path.join(embedding_dir,
+        path_image = os.path.join(embedding_path,
                                   constants.IMAGE_EMBEDDING_FILE)
         if os.path.exists(path_image):
             return path_image, 'image'
-        raise CellmapsCoEmbeddingError(f'Embedding file not found in {embedding_dir}')
+        raise CellmapsCoEmbeddingError(f'Embedding file not found in {embedding_path}')
 
-    def _get_embedding_files_and_names(self, embedding_filenames, embedding_names):
+    def _get_embedding_files_and_names(self, embedding_paths, embedding_names=None):
         """
-        From list of filepath or directories, get embedding filepaths and names. If no user supplied names, generate default names.
+        Retrieves the embedding file paths and their corresponding names based on the provided list of filenames or
+        directories. If user supplies names, these replace the default names derived from the files.
 
-        :param names: list of names
-        :type embedding_file: list
-        :return: names
-        :rtype: list
+        :param embedding_paths: A list of file paths or directories from which to retrieve embedding file paths.
+        :type embedding_paths: list
+        :param embedding_names: Optional. A list of names supplied by the user.
+        :type embedding_names: list or None
+        :return: A tuple of two lists: the first containing embedding file paths,
+                                        and the second containing corresponding unique names.
+        :rtype: (list, list)
+        :raises CellmapsCoEmbeddingError: If the number of user-supplied names does not match
+                                        the number of embedding file paths.
         """
         embeddings = []
         names = []
 
-        for filepath in embedding_filenames:
+        for filepath in embedding_paths:
             embedding_file, embedding_name = self._get_embedding_file_and_name(filepath)
             embeddings.append(embedding_file)
             names.append(embedding_name)
@@ -111,11 +121,11 @@ class EmbeddingGenerator(object):
 
     def _fix_duplicate_names(self, names):
         """
-       Fix duplicate embedding names by adding number
+        Ensures that each name in the provided list is unique by appending a sequential number to duplicate names.
 
-        :param names: list of names
+        :param names: A list of names.
         :type names: list
-        :return: unique_names
+        :return: unique_names: A list of names where duplicates have been made unique by appending a sequential number.
         :rtype: list
         """
         counts = {}
@@ -130,6 +140,13 @@ class EmbeddingGenerator(object):
         return unique_names
 
     def get_embedding_inputdirs(self):
+        """
+        Determines the input directories for embeddings by extracting the directory path from each embedding file path.
+        If the path is already a directory, it's returned as is.
+
+        :return: A list of directory paths for each embedding, derived from the embedding file paths.
+        :rtype: list
+        """
         return [os.path.dirname(file) if not os.path.isdir(file) else file for file in self._embeddings]
 
     def _get_set_of_gene_names(self, embedding):
@@ -163,9 +180,10 @@ class EmbeddingGenerator(object):
 
     def _get_embeddings_and_names(self):
         """
-        Gets list of embeddings and list of names
+        Gets a list of embeddings and a list of their names. It retrieves the file paths and names,
+        and then loads the actual embedding data from those files.
 
-        :return: embeddings, names
+        :return: A tuple where the first element is a list of embeddings, and the second element is a list of names.
         :rtype: list, list
         """
         embeddings = []
