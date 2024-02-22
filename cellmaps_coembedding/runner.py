@@ -540,6 +540,7 @@ class CellmapsCoEmbedder(object):
                      'data-format': 'tsv',
                      'author': cellmaps_coembedding.__name__,
                      'version': cellmaps_coembedding.__version__,
+                     'schema': 'https://raw.githubusercontent.com/fairscape/cm4ai-schemas/main/v0.1.0/cm4ai_schema_coembedding.json',
                      'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
         self._coembedding_id = self._provenance_utils.register_dataset(self._outdir,
                                                                        source_file=self.get_coembedding_file(),
