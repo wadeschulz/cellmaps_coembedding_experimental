@@ -57,6 +57,18 @@ def _parse_arguments(desc, args):
                              'a value of 0.1 means to withhold 10 percent of the data')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
+    parser.add_argument('--name',
+                        help='Name of this run, needed for FAIRSCAPE. If '
+                             'unset, name value from specified '
+                             'by --embeddings directories will be used')
+    parser.add_argument('--organization_name',
+                        help='Name of organization running this tool, needed '
+                             'for FAIRSCAPE. If unset, organization name specified '
+                             'in --embedding directories will be used')
+    parser.add_argument('--project_name',
+                        help='Name of project running this tool, needed for '
+                             'FAIRSCAPE. If unset, project name specified '
+                             'in --embedding directories will be used')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -148,6 +160,9 @@ def main(args):
         return CellmapsCoEmbedder(outdir=theargs.outdir,
                                   inputdirs=inputdirs,
                                   embedding_generator=gen,
+                                  name=theargs.name,
+                                  organization_name=theargs.organization_name,
+                                  project_name=theargs.project_name,
                                   skip_logging=theargs.skip_logging,
                                   input_data_dict=theargs.__dict__).run()
     except Exception as e:
