@@ -19,6 +19,7 @@ and `Cell Maps PPI Embedder <https://cellmaps-ppi-embedding.readthedocs.io>`__ u
 
 
 * Free software: MIT license
+* Source code: https://github.com/idekerlab/cellmaps_coembedding
 
 
 .. toctree::
