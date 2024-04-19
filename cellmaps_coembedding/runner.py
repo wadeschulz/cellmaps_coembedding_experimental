@@ -146,7 +146,7 @@ class EmbeddingGenerator(object):
 
 class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
-    Generats co-embedding using MUSE
+    Generates co-embedding using MUSE
     """
 
     def __init__(self, dimensions=128,
@@ -286,6 +286,7 @@ class CellmapsCoEmbedder(object):
                  input_data_dict=None):
         """
         Constructor
+
         :param outdir: Directory to write the results of this tool
         :type outdir: str
         :param inputdir: Output directory where embeddings to be coembedded are located
