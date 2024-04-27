@@ -12,12 +12,17 @@ class ToTensor:
     
     
 class Modality():
-    def __init__(self, training_data, name, test_subset, transform, device):
+    def __init__(self, training_data, name, transform, device):
         self.name = name
-        self.all_features = transform(training_data.values).to(device)
-        self.all_labels = training_data.index.values
-        self.train_labels = list(set(self.all_labels) - set(test_subset))
-        self.train_features = transform(training_data[self.train_labels].values).to(device)
+        
+        embedding_data = []
+        labels = []
+        for xi in training_data:
+            embedding_data.append(np.array([float(v) for v in xi[1:]]))
+            labels.append(xi[0])
+            
+        self.train_labels = labels
+        self.train_features = transform(np.array(embedding_data)).to(device)
         self.input_dim = self.train_features.shape[1]
 
 
@@ -56,7 +61,7 @@ class Protein_Dataset(Dataset):
 
                 
 class TrainingDataWrapper():
-    def __init__(self, modality_data, modality_names, test_subset, device, l2_norm, dropout,latent_dim, hidden_size_1, hidden_size_2, 
+    def __init__(self, modality_data, modality_names, device, l2_norm, dropout,latent_dim, hidden_size_1, hidden_size_2, 
                  resultsdir,):
         self.l2_norm = l2_norm
         self.dropout = dropout
@@ -69,7 +74,7 @@ class TrainingDataWrapper():
         self.modalities_dict = dict()
         
         for i in np.arange(len(modality_names)):
-            modality = Modality(modality_data[i], modality_names[i], test_subset, self.transform, self.device)
+            modality = Modality(modality_data[i], modality_names[i], self.transform, self.device)
             self.modalities_dict[modality_names[i]] = modality
 
 

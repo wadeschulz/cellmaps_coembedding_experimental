@@ -271,31 +271,19 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
             e.sort(key=lambda x: x[0])
             logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
 
-        embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
-        intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
+        embedding_gene_names = [self._get_set_of_gene_names(x) for x in embeddings]
+        unique_name_set = np.unique([item for sublist in embedding_gene_names for item in sublist])
 
         logger.info('There are ' +
-                    str(len(intersection_name_set)) +
-                    ' overlapping embeddings')
+                    str(len(unique_name_set)) +
+                    ' total proteins')
+       
 
-        name_index = [x[0] for x in embeddings[0] if x[0] in intersection_name_set]
-
-        embedding_data = []
-        for e in embeddings:
-            embedding_data.append(
-                np.array([np.array([float(v) for v in xi[1:]]) for xi in e if xi[0] in intersection_name_set]))
-
-        resultsdir = os.path.join(self._outdir, 'muse')
-
-        test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
-        if self._jackknife_percent > 0:
-            with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
-                file.write('\n'.join(np.array(name_index)[test_subset]))
+        resultsdir = os.path.join(self._outdir, 'auto')
 
         for embedding in autoembed.fit_predict(resultsdir=resultsdir,
-                                                     modality_data=embedding_data,
+                                                     modality_data=embeddings,
                                                      modality_names=embedding_names,
-                                                     test_subset=test_subset,
                                                      latent_dim=self.get_dimensions(),
                                                      n_epochs=self._n_epochs,
                                                      batch_size=self._batch_size,
@@ -360,7 +348,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
             logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
 
         embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
-        union_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
+        intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
 
         logger.info('There are ' +
                     str(len(intersection_name_set)) +

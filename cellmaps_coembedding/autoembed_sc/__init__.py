@@ -39,14 +39,13 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
         for i in np.arange(len(protein_dataset)):
             protein, mask, protein_index = protein_dataset[i]
             protein_name = protein_dataset.protein_ids[protein_index]
-            latents, outputs = model(protein) 
+            embeddings_by_protein[protein_name] = {}
+            latents, outputs = model(protein)
             for modality, latent in latents.items():
                 if mask[modality] > 0:
-                    protein_embedding = latent.detach().cpu().numpy(
-                    all_latents[modality][protein_name] = protein_embedding
-                    if protein not in embeddings_by_protein:
-                        embeddings_by_protein[protein] = {}
-                    embeddings_by_protein[protein][modality] = protein_embedding
+                    protein_embedding = latent.detach().cpu().numpy()
+                    all_latents[modality][protein_name] = protein_embedding                        
+                    embeddings_by_protein[protein_name][modality] = protein_embedding
             for modality, output in outputs.items():
                 input_modality = modality.split('_')[0]
                 output_modality = modality.split('_')[1]
@@ -69,9 +68,8 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
 
                    
                     
-def fit_predict(resultsdir, modality_data = [],
+def fit_predict(resultsdir, modality_data,
                      modality_names = [], 
-                     test_subset = [], 
                      batch_size=16,
                      latent_dim=128,
                      n_epochs=250,
@@ -102,7 +100,7 @@ def fit_predict(resultsdir, modality_data = [],
     if len(modality_names) != num_data_modalities:
         modality_names = ['modality_'.format(x) for x in np.arange(num_data_modalities)]
         
-    data_wrapper = TrainingDataWrapper(modality_data, modality_names, test_subset, device, l2_norm, dropout, 
+    data_wrapper = TrainingDataWrapper(modality_data, modality_names, device, l2_norm, dropout, 
                                        latent_dim, hidden_size_1, hidden_size_2, resultsdir)
 
 
@@ -172,7 +170,7 @@ def fit_predict(resultsdir, modality_data = [],
 
                 positive_mask = torch.eye(len(mask))
                 #pick random negative each anchor protein (criteria = not same protein, and negative that exists in negative modality(not masked))
-                if negative_from batch:
+                if negative_from_batch:
                     #within same batch
                     negative_mask = (torch.logical_not(positive_mask) & (batch_mask[posneg_modality].bool()))
                     negative_indices = [x.nonzero().flatten() for x in negative_mask]
