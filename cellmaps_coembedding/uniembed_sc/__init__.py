@@ -6,6 +6,7 @@ import collections
 import torch.nn.functional as F
 import os
 import csv
+import random
 
 
 def write_embedding_dictionary_to_file(filepath, dictionary, dims):
@@ -17,7 +18,7 @@ def write_embedding_dictionary_to_file(filepath, dictionary, dims):
         for key, value in dictionary.items():
             row = [key]
             row.extend(value)
-            writer.writerow(row)
+            writer.writerow(row)                      
 
 def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
     
@@ -35,7 +36,8 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
 
     with torch.no_grad():
         for i in np.arange(len(protein_dataset)):
-            protein, mask, protein_name = protein_dataset[i]
+            protein, mask, protein_index = protein_dataset[i]
+            protein_name = protein_dataset.protein_ids[protein_index]
             latents, outputs = model(protein) 
             for modality, latent in latents.items():
                 if mask[modality] > 0:
@@ -62,12 +64,12 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
 def uniembed_fit_predict(resultsdir, modality_dataframes = [],
                      modality_names = [], 
                      test_subset = [], 
-                     batch_size=14,
+                     batch_size=16,
                      latent_dim=128,
-                     n_epochs=500,
+                     n_epochs=250,
                      triplet_margin=1.0,
-                     lambda_reconstruction = 1, 
-                     lambda_triplet = 1,
+                     lambda_reconstruction = 1.0, 
+                     lambda_triplet = 1.0,
                      lambda_l2 = 0.001,
                      l2_norm = False,
                      dropout=0, 
@@ -113,54 +115,77 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
 
         model.train()
         # loop over all batches
-        for step, (batch_proteins, batch_mask, _) in enumerate(train_loader):
+        for step, (batch_data, batch_mask, batch_proteins) in enumerate(train_loader):
 
             #pass through model
-            latents, outputs = model(batch_proteins)
-            
+            latents, outputs = model(batch_data)
+
             batch_reconstruction_losses = torch.tensor([])
             batch_triplet_losses = torch.tensor([])
             batch_l2_losses = torch.tensor([])
 
-            for input_modality in batch_proteins.keys():
-                
-                #get l2 loss
-                for input_modality in batch_proteins.keys():
-                    l2_loss = torch.norm(latents[input_modality], p=2, dim=1)
-                    batch_l2_losses = torch.cat((batch_l2_losses, l2_loss))
-                    
-                    
-                for output_modality in batch_proteins.keys():
+            for input_modality in batch_data.keys():
 
-                     #calculate pairwise sim
-                    output_key = input_modality + '_' + output_modality
-                    pairwise_sim = 1 - F.cosine_similarity(batch_proteins[input_modality].unsqueeze(1), outputs[output_key].unsqueeze(0), dim=2)                
+                #get l2 loss
+                l2_loss = torch.norm(latents[input_modality], p=2, dim=1)
+                batch_l2_losses = torch.cat((batch_l2_losses, l2_loss))
+                    
+                    
+                # get reconstruction losses
+                for output_modality in batch_data.keys():
 
                     #protein_present in both modalities mask
                     mask = (batch_mask[input_modality].bool()) & (batch_mask[output_modality].bool())
-                    if torch.sum(mask) < 2: 
-                        continue #not enough protein overlap across modalities
+                    if torch.sum(mask) == 0: 
+                        continue #no overlap
 
-                    # get reconstruction_losses
-                    reconstruction_loss = pairwise_sim[mask, mask].flatten()
+                    output_key = input_modality + '_' + output_modality
+                    
+                    #compare OUTPUT modality original embedding to output embedding
+                    pairwise_dist_input_output = 1 - F.cosine_similarity(batch_data[output_modality],outputs[output_key], dim=1)                
+                    reconstruction_loss = pairwise_dist_input_output[mask]
                     batch_reconstruction_losses = torch.cat((batch_reconstruction_losses, reconstruction_loss))
-                    total_reconstruction_loss_by_modality[input_modality + '_' + 
-                                                          output_modality].append(torch.mean(reconstruction_loss).detach().cpu().numpy())
+                    total_reconstruction_loss_by_modality[output_key].append(torch.mean(reconstruction_loss).detach().cpu().numpy())
+            
+            for anchor_modality in batch_data.keys():
+                posneg_modality = random.choice(list([x for x in batch_data.keys() if x != anchor_modality]))
+                
+                mask = (batch_mask[anchor_modality].bool()) & (batch_mask[posneg_modality].bool())
+                if batch_mask[posneg_modality].sum() < 2:
+                    continue # need at least 2 proteins in batch to make triplet with negative (if only one, th)
+                if torch.sum(mask) == 0: 
+                    continue #no overlap, need at least 1
+
+                anchor_latents = latents[anchor_modality]
+                positive_latents = latents[posneg_modality]
+                positive_dist = 1 - F.cosine_similarity(anchor_latents, positive_latents, dim=1)
+
+                positive_mask = torch.eye(len(mask))
+                #pick random negative each anchor protein (criteria = not same protein, and negative that exists in negative modality(not masked))
+                #within same batch
+                negative_mask = (torch.logical_not(positive_mask) & (batch_mask[posneg_modality].bool()))
+                negative_indices = [x.nonzero().flatten() for x in negative_mask]
+                negative_index = [int(x[torch.randperm(len(x))[0]]) for x in negative_indices]
+                negative_latents = latents[posneg_modality][negative_index]
+                #any protein
+#                 posneg_modality_indices = np.arange(len(data_wrapper.modalities_dict[posneg_modality].train_labels))
+#                 protein_indexes_not_in_batch = list(set(posneg_modality_indices) - set(batch_proteins))
+#                 negative_indices = random.sample(protein_indexes_not_in_batch, len(positive_dist))
+#                 negative_data = {posneg_modality : 
+#                                       data_wrapper.modalities_dict[posneg_modality].train_features[negative_indices] } 
+#                 negative_latents_dict, _ = model(negative_data)
+#                 negative_latents = negative_latents_dict[posneg_modality]
                     
-                    #get triplet loss
-                    if input_modality == output_modality:
-                        continue #no triplet loss  if modalities match
-                    positive_mask = torch.eye(pairwise_sim.shape[0]).bool().to(device)
-                    negative_mask = torch.logical_not(positive_mask)
-                    positive_dist = pairwise_sim[positive_mask]
-                    #take closest negative for each row (set positives to infinity)
-                    negative_dist = torch.min(torch.where(negative_mask, pairwise_sim, torch.inf), 1)[0]
-                    #triplet is max of 0 or positive - negative
-                    triplet_loss = torch.maximum(positive_dist - negative_dist + triplet_margin, torch.zeros(pairwise_sim.shape[0]))
-                    batch_triplet_losses = torch.cat((batch_triplet_losses, triplet_loss))
-                    total_triplet_loss_by_modality[input_modality + '_' + 
-                                                   output_modality].append(torch.mean(triplet_loss).detach().cpu().numpy())
-                    
+                negative_dist = 1 - F.cosine_similarity(anchor_latents, negative_latents, dim=1)
+
+                #triplet is max of 0 or positive - negative
+                triplet_loss = torch.maximum(positive_dist - negative_dist + triplet_margin, torch.zeros(len(positive_dist)))
+                triplet_loss = triplet_loss[mask]
+
+                batch_triplet_losses = torch.cat((batch_triplet_losses, triplet_loss))
+                total_triplet_loss_by_modality[anchor_modality + '_' + 
+                                               posneg_modality].append(torch.mean(triplet_loss).detach().cpu().numpy())
+                  
 
             if (len(batch_reconstruction_losses) == 0 ) | (len(batch_triplet_losses) == 0):
                 continue #didn't have any overlapping proteins in any modalities
@@ -168,7 +193,7 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
             mean_reconstruction_loss = torch.mean(batch_reconstruction_losses)
             mean_triplet_loss = torch.mean(batch_triplet_losses)
             mean_l2_loss = torch.mean(batch_l2_losses)
-            batch_total = lambda_reconstruction*mean_reconstruction_loss + lambda_triplet*mean_triplet_loss #+ lambda_l2*mean_l2_loss
+            batch_total = lambda_reconstruction*mean_reconstruction_loss + lambda_triplet*mean_triplet_loss + lambda_l2*mean_l2_loss
             
             optimizer.zero_grad()
             batch_total.backward()
@@ -178,6 +203,20 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
             total_reconstruction_loss.append(mean_reconstruction_loss.detach().cpu().numpy())
             total_triplet_loss.append(mean_triplet_loss.detach().cpu().numpy())
             total_l2_loss.append(mean_l2_loss.detach().cpu().numpy())
+
+#             sum_reconstruction_loss = torch.sum(batch_reconstruction_losses)
+#             sum_triplet_loss = torch.sum(batch_triplet_losses)
+#             sum_l2_loss = torch.sum(batch_l2_losses)
+#             batch_total = lambda_reconstruction*sum_reconstruction_loss + lambda_triplet*sum_triplet_loss + lambda_l2*sum_l2_loss
+            
+#             optimizer.zero_grad()
+#             batch_total.backward()
+#             optimizer.step()
+
+#             total_loss.append(batch_total.detach().cpu().numpy())
+#             total_reconstruction_loss.append(sum_reconstruction_loss.detach().cpu().numpy())
+#             total_triplet_loss.append(sum_triplet_loss.detach().cpu().numpy())
+#             total_l2_loss.append(sum_l2_loss.detach().cpu().numpy())
 
         #get result string wtith losses
         result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (epoch, 

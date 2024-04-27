@@ -16,7 +16,6 @@ class Modality():
         self.name = name
         self.all_features = transform(training_dataframe.values).to(device)
         self.all_labels = training_dataframe.index.values
-
         self.train_labels = list(set(self.all_labels) - set(test_subset))
         self.train_features = transform(training_dataframe.loc[self.train_labels].values).to(device)
         self.input_dim = self.train_features.shape[1]
@@ -53,7 +52,7 @@ class Protein_Dataset(Dataset):
     
     def __getitem__(self, index):
         item = self.protein_ids[index]
-        return self.protein_dict[item], self.mask_dict[item], item
+        return self.protein_dict[item], self.mask_dict[item], index
 
                 
 class TrainingDataWrapper():
@@ -95,8 +94,9 @@ class uniembed_nn(nn.Module):
                 nn.ReLU(),
                 nn.Dropout(data_wrapper.dropout),
                 nn.Linear(data_wrapper.hidden_size_1, data_wrapper.hidden_size_2),
+                nn.ReLU(),
                 nn.Linear(data_wrapper.hidden_size_2, data_wrapper.latent_dim))
-            encoder.apply(init_weights)   
+        #    encoder.apply(init_weights)   
             
             decoder = nn.Sequential(
                 nn.Dropout(data_wrapper.dropout),
@@ -105,7 +105,7 @@ class uniembed_nn(nn.Module):
                 nn.Linear(data_wrapper.hidden_size_2, data_wrapper.hidden_size_1),
                 nn.ReLU(),
                 nn.Linear(data_wrapper.hidden_size_1, modality.input_dim))
-            decoder.apply(init_weights)
+       #     decoder.apply(init_weights)
             
             self.encoders[modality.name] = encoder
             self.decoders[modality.name] = decoder
@@ -117,14 +117,13 @@ class uniembed_nn(nn.Module):
         for modality_name, modality_values in inputs.items():
             
             latent = self.encoders[modality_name](modality_values)       
-#             if self.l2_norm:
-#                 latent = nn.functional.normalize(latent, p=2, dim=1)
-            
+            if self.l2_norm:
+                latent = nn.functional.normalize(latent, p=2, dim=1)
             latents[modality_name] = latent
             
         for modality_name, modality_values in latents.items():
             for output_name, _ in inputs.items():
                 outputs[modality_name + '_' + output_name] = self.decoders[output_name](modality_values)
         
-        return inputs, outputs            
+        return latents, outputs            
  
