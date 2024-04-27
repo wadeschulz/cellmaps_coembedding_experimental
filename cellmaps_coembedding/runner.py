@@ -16,6 +16,7 @@ from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_coembedding
 import cellmaps_coembedding.muse_sc as muse
+import cellmaps_coembedding.autoembed_sc as autoembed
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -213,7 +214,96 @@ class EmbeddingGenerator(object):
         """
         raise NotImplementedError('Subclasses should implement')
 
+class AutoCoEmbeddingGenerator(EmbeddingGenerator):
+    """
+    Generats co-embedding using MUSE
+    """
 
+    def __init__(self, dimensions=128,
+                 outdir=None,
+                 embeddings=None,
+                 ppi_embeddingdir=None,
+                 image_embeddingdir=None,
+                 embedding_names=None,
+                 jackknife_percent=0,
+                 n_epochs=250,
+                 save_update_epochs=True,
+                 batch_size=16,
+                 triplet_margin=1.0, dropout=0,
+                 ):
+        """
+
+        :param dimensions:
+        :param k: k nearest neighbors value used for clustering - clustering used for triplet loss
+        :param triplet_margin: margin for triplet loss
+        :param dropout: dropout between neural net layers
+        :param n_epochs: training epochs
+        :param n_epochs_init: initialization training epochs
+        :param outdir:
+        :param ppi_embeddingdir:
+        :param image_embeddingdir:
+        :param jackknife_percent: percent of data to withhold from training
+        """
+        super().__init__(dimensions=dimensions, embeddings=embeddings,
+                         ppi_embeddingdir=ppi_embeddingdir,
+                         image_embeddingdir=image_embeddingdir,
+                         embedding_names=embedding_names
+                         )
+        self._outdir = outdir
+        self.triplet_margin = triplet_margin
+        self._dropout = dropout
+        self._n_epochs = n_epochs
+        self._save_update_epochs = save_update_epochs
+        self._batch_size = batch_size
+        self._jackknife_percent = jackknife_percent
+
+    def get_next_embedding(self):
+        """
+
+        :return:
+        """
+        embeddings, embedding_names = self._get_embeddings_and_names()
+        if len(embeddings) > 2:
+            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with MUSE coembedding option')
+
+        for index in np.arange(len(embeddings)):
+            e = embeddings[index]
+            e.sort(key=lambda x: x[0])
+            logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
+
+        embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
+        intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
+
+        logger.info('There are ' +
+                    str(len(intersection_name_set)) +
+                    ' overlapping embeddings')
+
+        name_index = [x[0] for x in embeddings[0] if x[0] in intersection_name_set]
+
+        embedding_data = []
+        for e in embeddings:
+            embedding_data.append(
+                np.array([np.array([float(v) for v in xi[1:]]) for xi in e if xi[0] in intersection_name_set]))
+
+        resultsdir = os.path.join(self._outdir, 'muse')
+
+        test_subset = random.sample(list(np.arange(len(name_index))), int(self._jackknife_percent * len(name_index)))
+        if self._jackknife_percent > 0:
+            with open('{}_test_genes.txt'.format(resultsdir), 'w') as file:
+                file.write('\n'.join(np.array(name_index)[test_subset]))
+
+        for embedding in autoembed.fit_predict(resultsdir=resultsdir,
+                                                     modality_data=embedding_data,
+                                                     modality_names=embedding_names,
+                                                     test_subset=test_subset,
+                                                     latent_dim=self.get_dimensions(),
+                                                     n_epochs=self._n_epochs,
+                                                     batch_size=self._batch_size,
+                                                     save_update_epochs=self._save_update_epochs):
+            yield embedding 
+
+
+            
 class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
@@ -270,7 +360,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
             logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
 
         embedding_name_sets = [self._get_set_of_gene_names(x) for x in embeddings]
-        intersection_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
+        union_name_set = embedding_name_sets[0].intersection(embedding_name_sets[1])
 
         logger.info('There are ' +
                     str(len(intersection_name_set)) +

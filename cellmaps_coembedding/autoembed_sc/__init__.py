@@ -34,6 +34,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
             output_key = input_modality + '_' + output_modality
             all_outputs[output_key] = dict()
 
+    embeddings_by_protein = {}
     with torch.no_grad():
         for i in np.arange(len(protein_dataset)):
             protein, mask, protein_index = protein_dataset[i]
@@ -41,7 +42,11 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
             latents, outputs = model(protein) 
             for modality, latent in latents.items():
                 if mask[modality] > 0:
-                    all_latents[modality][protein_name] = latent.detach().cpu().numpy()
+                    protein_embedding = latent.detach().cpu().numpy(
+                    all_latents[modality][protein_name] = protein_embedding
+                    if protein not in embeddings_by_protein:
+                        embeddings_by_protein[protein] = {}
+                    embeddings_by_protein[protein][modality] = protein_embedding
             for modality, output in outputs.items():
                 input_modality = modality.split('_')[0]
                 output_modality = modality.split('_')[1]
@@ -59,9 +64,12 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
         output_modality = modality.split('_')[1]
         output_modality_dim = data_wrapper.modalities_dict[output_modality].input_dim
         write_embedding_dictionary_to_file(filepath, outputs, output_modality_dim)
+    
+    return embeddings_by_protein
+
                    
                     
-def uniembed_fit_predict(resultsdir, modality_dataframes = [],
+def fit_predict(resultsdir, modality_data = [],
                      modality_names = [], 
                      test_subset = [], 
                      batch_size=16,
@@ -77,7 +85,9 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
                      learn_rate = 1e-4,
                      hidden_size_1 = 512,
                      hidden_size_2 = 256,
-                     save_update_epochs=False):
+                     save_update_epochs=False,
+                     mean_losses=False,
+                     negative_from_batch=False):
     
     
     source_file = open('{}.txt'.format(resultsdir), 'w')
@@ -88,11 +98,11 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
         torch.cuda.get_device_name()
 
     #if modality names doesn't match data size, create names with index
-    num_data_modalities = len(modality_dataframes)
+    num_data_modalities = len(modality_data)
     if len(modality_names) != num_data_modalities:
         modality_names = ['modality_'.format(x) for x in np.arange(num_data_modalities)]
-
-    data_wrapper = TrainingDataWrapper(modality_dataframes, modality_names, test_subset, device, l2_norm, dropout, 
+        
+    data_wrapper = TrainingDataWrapper(modality_data, modality_names, test_subset, device, l2_norm, dropout, 
                                        latent_dim, hidden_size_1, hidden_size_2, resultsdir)
 
 
@@ -162,19 +172,21 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
 
                 positive_mask = torch.eye(len(mask))
                 #pick random negative each anchor protein (criteria = not same protein, and negative that exists in negative modality(not masked))
-                #within same batch
-                negative_mask = (torch.logical_not(positive_mask) & (batch_mask[posneg_modality].bool()))
-                negative_indices = [x.nonzero().flatten() for x in negative_mask]
-                negative_index = [int(x[torch.randperm(len(x))[0]]) for x in negative_indices]
-                negative_latents = latents[posneg_modality][negative_index]
-                #any protein
-#                 posneg_modality_indices = np.arange(len(data_wrapper.modalities_dict[posneg_modality].train_labels))
-#                 protein_indexes_not_in_batch = list(set(posneg_modality_indices) - set(batch_proteins))
-#                 negative_indices = random.sample(protein_indexes_not_in_batch, len(positive_dist))
-#                 negative_data = {posneg_modality : 
-#                                       data_wrapper.modalities_dict[posneg_modality].train_features[negative_indices] } 
-#                 negative_latents_dict, _ = model(negative_data)
-#                 negative_latents = negative_latents_dict[posneg_modality]
+                if negative_from batch:
+                    #within same batch
+                    negative_mask = (torch.logical_not(positive_mask) & (batch_mask[posneg_modality].bool()))
+                    negative_indices = [x.nonzero().flatten() for x in negative_mask]
+                    negative_index = [int(x[torch.randperm(len(x))[0]]) for x in negative_indices]
+                    negative_latents = latents[posneg_modality][negative_index]
+                else:
+                    #any protein
+                    posneg_modality_indices = np.arange(len(data_wrapper.modalities_dict[posneg_modality].train_labels))
+                    protein_indexes_not_in_batch = list(set(posneg_modality_indices) - set(batch_proteins))
+                    negative_indices = random.sample(protein_indexes_not_in_batch, len(positive_dist))
+                    negative_data = {posneg_modality : 
+                                          data_wrapper.modalities_dict[posneg_modality].train_features[negative_indices] } 
+                    negative_latents_dict, _ = model(negative_data)
+                    negative_latents = negative_latents_dict[posneg_modality]
                     
                 negative_dist = 1 - F.cosine_similarity(anchor_latents, negative_latents, dim=1)
 
@@ -189,34 +201,35 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
 
             if (len(batch_reconstruction_losses) == 0 ) | (len(batch_triplet_losses) == 0):
                 continue #didn't have any overlapping proteins in any modalities
-                
-            mean_reconstruction_loss = torch.mean(batch_reconstruction_losses)
-            mean_triplet_loss = torch.mean(batch_triplet_losses)
-            mean_l2_loss = torch.mean(batch_l2_losses)
-            batch_total = lambda_reconstruction*mean_reconstruction_loss + lambda_triplet*mean_triplet_loss + lambda_l2*mean_l2_loss
             
-            optimizer.zero_grad()
-            batch_total.backward()
-            optimizer.step()
+            if mean_losses:
+                mean_reconstruction_loss = torch.mean(batch_reconstruction_losses)
+                mean_triplet_loss = torch.mean(batch_triplet_losses)
+                mean_l2_loss = torch.mean(batch_l2_losses)
+                batch_total = lambda_reconstruction*mean_reconstruction_loss + lambda_triplet*mean_triplet_loss + lambda_l2*mean_l2_loss
 
-            total_loss.append(batch_total.detach().cpu().numpy())
-            total_reconstruction_loss.append(mean_reconstruction_loss.detach().cpu().numpy())
-            total_triplet_loss.append(mean_triplet_loss.detach().cpu().numpy())
-            total_l2_loss.append(mean_l2_loss.detach().cpu().numpy())
+                optimizer.zero_grad()
+                batch_total.backward()
+                optimizer.step()
 
-#             sum_reconstruction_loss = torch.sum(batch_reconstruction_losses)
-#             sum_triplet_loss = torch.sum(batch_triplet_losses)
-#             sum_l2_loss = torch.sum(batch_l2_losses)
-#             batch_total = lambda_reconstruction*sum_reconstruction_loss + lambda_triplet*sum_triplet_loss + lambda_l2*sum_l2_loss
-            
-#             optimizer.zero_grad()
-#             batch_total.backward()
-#             optimizer.step()
+                total_loss.append(batch_total.detach().cpu().numpy())
+                total_reconstruction_loss.append(mean_reconstruction_loss.detach().cpu().numpy())
+                total_triplet_loss.append(mean_triplet_loss.detach().cpu().numpy())
+                total_l2_loss.append(mean_l2_loss.detach().cpu().numpy())
+            else:
+                sum_reconstruction_loss = torch.sum(batch_reconstruction_losses)
+                sum_triplet_loss = torch.sum(batch_triplet_losses)
+                sum_l2_loss = torch.sum(batch_l2_losses)
+                batch_total = lambda_reconstruction*sum_reconstruction_loss + lambda_triplet*sum_triplet_loss + lambda_l2*sum_l2_loss
 
-#             total_loss.append(batch_total.detach().cpu().numpy())
-#             total_reconstruction_loss.append(sum_reconstruction_loss.detach().cpu().numpy())
-#             total_triplet_loss.append(sum_triplet_loss.detach().cpu().numpy())
-#             total_l2_loss.append(sum_l2_loss.detach().cpu().numpy())
+                optimizer.zero_grad()
+                batch_total.backward()
+                optimizer.step()
+
+                total_loss.append(batch_total.detach().cpu().numpy())
+                total_reconstruction_loss.append(sum_reconstruction_loss.detach().cpu().numpy())
+                total_triplet_loss.append(sum_triplet_loss.detach().cpu().numpy())
+                total_l2_loss.append(sum_l2_loss.detach().cpu().numpy())
 
         #get result string wtith losses
         result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (epoch, 
@@ -234,7 +247,12 @@ def uniembed_fit_predict(resultsdir, modality_dataframes = [],
             save_results(model, protein_dataset, data_wrapper, results_suffix = '_epoch{}'.format(epoch))
            
     #save final results 
-    save_results(model, protein_dataset, data_wrapper)
+    embeddings_by_protein = save_results(model, protein_dataset, data_wrapper)
     source_file.close()
-
-    return model
+    
+    #average embeddings for each protein and return as coemembedding
+    for protein, embeddings in embeddings_by_protein.items():
+        average_embedding = np.mean(embeddings.values(), axis=0)
+        row = [protein]
+        row.extend(average_embedding)
+        yield row

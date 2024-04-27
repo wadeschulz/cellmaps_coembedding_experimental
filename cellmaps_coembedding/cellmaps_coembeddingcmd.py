@@ -130,8 +130,8 @@ def main(args):
         raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
                                        'not both')
     if theargs.embeddings:
-        if len(theargs.embeddings) > 2 and (theargs.algorithm == 'auto' or theargs.algorithm == 'muse'):
-            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with --embeddings')
+        if len(theargs.embeddings) > 2 and (theargs.algorithm == 'muse'):
+            raise CellmapsCoEmbeddingError('Only two embeddings are supported with --embeddings for MUSE algorithm')
 
     if not (theargs.ppi_embeddingdir and theargs.image_embeddingdir) and not theargs.embeddings:
         raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
@@ -146,15 +146,25 @@ def main(args):
                                            embeddings=theargs.embeddings,
                                            embedding_names=theargs.embedding_names)
         else:
-            gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
-                                           ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                           image_embeddingdir=theargs.image_embeddingdir,
-                                           n_epochs=theargs.n_epochs,
-                                           n_epochs_init=theargs.n_epochs_init,
-                                           jackknife_percent=theargs.jackknife_percent,
-                                           outdir=os.path.abspath(theargs.outdir),
-                                           embeddings=theargs.embeddings,
-                                           embedding_names=theargs.embedding_names)
+            if theargs.algorithm == 'muse':
+                gen = MuseCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                               ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                               image_embeddingdir=theargs.image_embeddingdir,
+                                               n_epochs=theargs.n_epochs,
+                                               n_epochs_init=theargs.n_epochs_init,
+                                               jackknife_percent=theargs.jackknife_percent,
+                                               outdir=os.path.abspath(theargs.outdir),
+                                               embeddings=theargs.embeddings,
+                                               embedding_names=theargs.embedding_names)
+            if theargs.algorithm == 'auto':
+                gen = AutoCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                               ppi_embeddingdir=theargs.ppi_embeddingdir,
+                               image_embeddingdir=theargs.image_embeddingdir,
+                               n_epochs=theargs.n_epochs,
+                               jackknife_percent=theargs.jackknife_percent,
+                               outdir=os.path.abspath(theargs.outdir),
+                               embeddings=theargs.embeddings,
+                               embedding_names=theargs.embedding_names)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,
