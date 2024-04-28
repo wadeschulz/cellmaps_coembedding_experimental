@@ -39,8 +39,8 @@ def _parse_arguments(desc, args):
                         help='Filepath to .tsv with embeddings. Requires two or more paths.')
     parser.add_argument('--embedding_names', nargs='+',
                         help='Name corresponding to each filepath input in --embeddings. ')
-    parser.add_argument('--algorithm', choices=['auto', 'muse'], default='auto',
-                        help='Algorithm to use for coembedding. Defaults to auto.')
+    parser.add_argument('--algorithm', choices=['auto', 'muse'], default='muse',
+                        help='Algorithm to use for coembedding. Defaults to MUSE.')
     parser.add_argument(PPI_EMBEDDINGDIR,
                         help='Directory aka rocrate where ppi '
                              'embedding file resides (Deprecated: use --embeddings flag)')
