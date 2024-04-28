@@ -131,7 +131,7 @@ def main(args):
         raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
                                        'not both')
     if theargs.embeddings:
-        if len(theargs.embeddings) > 2 and (theargs.algorithm == 'muse'):
+        if len(theargs.embeddings) > 2 and theargs.algorithm == 'muse':
             raise CellmapsCoEmbeddingError('Only two embeddings are supported with --embeddings for MUSE algorithm')
 
     if not (theargs.ppi_embeddingdir and theargs.image_embeddingdir) and not theargs.embeddings:

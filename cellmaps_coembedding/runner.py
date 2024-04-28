@@ -263,8 +263,6 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
         :return:
         """
         embeddings, embedding_names = self._get_embeddings_and_names()
-        if len(embeddings) > 2:
-            raise CellmapsCoEmbeddingError('Currently, only two embeddings are supported with MUSE coembedding option')
 
         for index in np.arange(len(embeddings)):
             e = embeddings[index]

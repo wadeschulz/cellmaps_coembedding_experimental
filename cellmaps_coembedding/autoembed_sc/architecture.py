@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
+import csv
 
 
 class ToTensor:
@@ -17,11 +18,12 @@ class Modality():
         
         embedding_data = []
         labels = []
+        
         for xi in training_data:
             embedding_data.append(np.array([float(v) for v in xi[1:]]))
             labels.append(xi[0])
             
-        self.train_labels = labels
+        self.train_labels = list(labels)
         self.train_features = transform(np.array(embedding_data)).to(device)
         self.input_dim = self.train_features.shape[1]
 

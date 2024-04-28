@@ -24,7 +24,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
     
     resultsdir = data_wrapper.resultsdir + results_suffix
     model.eval()
-    torch.save(model.state_dict(), '{}model.pth'.format(resultsdir))
+    torch.save(model.state_dict(), '{}_model.pth'.format(resultsdir))
     
     all_latents = dict()
     all_outputs = dict()
@@ -34,12 +34,12 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix = ''):
             output_key = input_modality + '_' + output_modality
             all_outputs[output_key] = dict()
 
-    embeddings_by_protein = {}
+    embeddings_by_protein = dict()
     with torch.no_grad():
         for i in np.arange(len(protein_dataset)):
             protein, mask, protein_index = protein_dataset[i]
             protein_name = protein_dataset.protein_ids[protein_index]
-            embeddings_by_protein[protein_name] = {}
+            embeddings_by_protein[protein_name] = dict()
             latents, outputs = model(protein)
             for modality, latent in latents.items():
                 if mask[modality] > 0:
@@ -201,33 +201,25 @@ def fit_predict(resultsdir, modality_data,
                 continue #didn't have any overlapping proteins in any modalities
             
             if mean_losses:
-                mean_reconstruction_loss = torch.mean(batch_reconstruction_losses)
-                mean_triplet_loss = torch.mean(batch_triplet_losses)
-                mean_l2_loss = torch.mean(batch_l2_losses)
-                batch_total = lambda_reconstruction*mean_reconstruction_loss + lambda_triplet*mean_triplet_loss + lambda_l2*mean_l2_loss
+                reconstruction_loss = torch.mean(batch_reconstruction_losses)
+                triplet_loss = torch.mean(batch_triplet_losses)
+                l2_loss = torch.mean(batch_l2_losses)
 
-                optimizer.zero_grad()
-                batch_total.backward()
-                optimizer.step()
-
-                total_loss.append(batch_total.detach().cpu().numpy())
-                total_reconstruction_loss.append(mean_reconstruction_loss.detach().cpu().numpy())
-                total_triplet_loss.append(mean_triplet_loss.detach().cpu().numpy())
-                total_l2_loss.append(mean_l2_loss.detach().cpu().numpy())
             else:
-                sum_reconstruction_loss = torch.sum(batch_reconstruction_losses)
-                sum_triplet_loss = torch.sum(batch_triplet_losses)
-                sum_l2_loss = torch.sum(batch_l2_losses)
-                batch_total = lambda_reconstruction*sum_reconstruction_loss + lambda_triplet*sum_triplet_loss + lambda_l2*sum_l2_loss
+                reconstruction_loss = torch.sum(batch_reconstruction_losses)
+                triplet_loss = torch.sum(batch_triplet_losses)
+                l2_loss = torch.sum(batch_l2_losses)
 
-                optimizer.zero_grad()
-                batch_total.backward()
-                optimizer.step()
+            batch_total = lambda_reconstruction*reconstruction_loss + lambda_triplet*triplet_loss + lambda_l2*l2_loss
 
-                total_loss.append(batch_total.detach().cpu().numpy())
-                total_reconstruction_loss.append(sum_reconstruction_loss.detach().cpu().numpy())
-                total_triplet_loss.append(sum_triplet_loss.detach().cpu().numpy())
-                total_l2_loss.append(sum_l2_loss.detach().cpu().numpy())
+            optimizer.zero_grad()
+            batch_total.backward()
+            optimizer.step()
+
+            total_loss.append(batch_total.detach().cpu().numpy())
+            total_reconstruction_loss.append(reconstruction_loss.detach().cpu().numpy())
+            total_triplet_loss.append(triplet_loss.detach().cpu().numpy())
+            total_l2_loss.append(l2_loss.detach().cpu().numpy())
 
         #get result string wtith losses
         result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (epoch, 
@@ -250,7 +242,7 @@ def fit_predict(resultsdir, modality_data,
     
     #average embeddings for each protein and return as coemembedding
     for protein, embeddings in embeddings_by_protein.items():
-        average_embedding = np.mean(embeddings.values(), axis=0)
+        average_embedding = np.mean(list(embeddings.values()), axis=0)
         row = [protein]
         row.extend(average_embedding)
         yield row
