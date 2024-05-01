@@ -214,6 +214,7 @@ class EmbeddingGenerator(object):
         """
         raise NotImplementedError('Subclasses should implement')
 
+
 class AutoCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
@@ -275,21 +276,19 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
         logger.info('There are ' +
                     str(len(unique_name_set)) +
                     ' total proteins')
-       
 
         resultsdir = os.path.join(self._outdir, 'auto')
 
         for embedding in autoembed.fit_predict(resultsdir=resultsdir,
-                                                     modality_data=embeddings,
-                                                     modality_names=embedding_names,
-                                                     latent_dim=self.get_dimensions(),
-                                                     n_epochs=self._n_epochs,
-                                                     batch_size=self._batch_size,
-                                                     save_update_epochs=self._save_update_epochs):
-            yield embedding 
+                                               modality_data=embeddings,
+                                               modality_names=embedding_names,
+                                               latent_dim=self.get_dimensions(),
+                                               n_epochs=self._n_epochs,
+                                               batch_size=self._batch_size,
+                                               save_update_epochs=self._save_update_epochs):
+            yield embedding
 
 
-            
 class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
