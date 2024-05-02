@@ -10,7 +10,7 @@ from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_coembedding
-from cellmaps_coembedding.runner import AutoCoEmbeddingGenerator
+from cellmaps_coembedding.runner import AutoCoEmbeddingGenerator, EmbeddingGenerator
 from cellmaps_coembedding.runner import MuseCoEmbeddingGenerator
 from cellmaps_coembedding.runner import FakeCoEmbeddingGenerator
 from cellmaps_coembedding.runner import CellmapsCoEmbedder
@@ -140,6 +140,7 @@ def main(args):
 
     try:
         logutils.setup_cmd_logging(theargs)
+        gen = EmbeddingGenerator()
         if theargs.fake_embedding:
             gen = FakeCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
                                            ppi_embeddingdir=theargs.ppi_embeddingdir,
@@ -159,13 +160,13 @@ def main(args):
                                                embedding_names=theargs.embedding_names)
             if theargs.algorithm == 'auto':
                 gen = AutoCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
-                               ppi_embeddingdir=theargs.ppi_embeddingdir,
-                               image_embeddingdir=theargs.image_embeddingdir,
-                               n_epochs=theargs.n_epochs,
-                               jackknife_percent=theargs.jackknife_percent,
-                               outdir=os.path.abspath(theargs.outdir),
-                               embeddings=theargs.embeddings,
-                               embedding_names=theargs.embedding_names)
+                                               ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                               image_embeddingdir=theargs.image_embeddingdir,
+                                               n_epochs=theargs.n_epochs,
+                                               jackknife_percent=theargs.jackknife_percent,
+                                               outdir=os.path.abspath(theargs.outdir),
+                                               embeddings=theargs.embeddings,
+                                               embedding_names=theargs.embedding_names)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,
