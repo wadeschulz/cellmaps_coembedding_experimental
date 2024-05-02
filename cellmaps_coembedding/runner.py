@@ -16,6 +16,7 @@ from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_coembedding
 import cellmaps_coembedding.muse_sc as muse
+import cellmaps_coembedding.autoembed_sc as autoembed
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -214,6 +215,84 @@ class EmbeddingGenerator(object):
         raise NotImplementedError('Subclasses should implement')
 
 
+class AutoCoEmbeddingGenerator(EmbeddingGenerator):
+    """
+    Generates co-embedding using autoembedder
+    """
+
+    def __init__(self, dimensions=128,
+                 outdir=None,
+                 embeddings=None,
+                 ppi_embeddingdir=None,
+                 image_embeddingdir=None,
+                 embedding_names=None,
+                 jackknife_percent=0,
+                 n_epochs=250,
+                 save_update_epochs=True,
+                 batch_size=16,
+                 triplet_margin=1.0, dropout=0,
+                 ):
+        """
+        Initializes the AutoCoEmbeddingGenerator.
+
+        :param dimensions: The dimensionality of the embedding space (default: 128).
+        :param outdir: The output directory where embeddings should be saved.
+        :param embeddings: Embedding data.
+        :param ppi_embeddingdir: Directory containing protein-protein interaction embeddings.
+        :param image_embeddingdir: Directory containing image embeddings.
+        :param embedding_names: List of names corresponding to each type of embedding provided.
+        :param jackknife_percent: Percentage of data to withhold from training as a method of resampling (default: 0).
+        :param n_epochs: Number of epochs for which the model trains (default: 250).
+        :param save_update_epochs: Boolean indicating whether to save embeddings at regular epoch intervals.
+        :param batch_size: Number of samples per batch during training (default: 16).
+        :param triplet_margin: The margin value for the triplet loss during training (default: 1.0).
+        :param dropout: The dropout rate between layers in the neural network (default: 0).
+        """
+        super().__init__(dimensions=dimensions, embeddings=embeddings,
+                         ppi_embeddingdir=ppi_embeddingdir,
+                         image_embeddingdir=image_embeddingdir,
+                         embedding_names=embedding_names
+                         )
+        self._outdir = outdir
+        self.triplet_margin = triplet_margin
+        self._dropout = dropout
+        self._n_epochs = n_epochs
+        self._save_update_epochs = save_update_epochs
+        self._batch_size = batch_size
+        self._jackknife_percent = jackknife_percent
+
+    def get_next_embedding(self):
+        """
+        Iteratively generates embeddings by fitting the autoembedder to the current data set.
+
+        :return: Yields the next embedding, produced by the autoembedder's fit_predict method.
+        """
+        embeddings, embedding_names = self._get_embeddings_and_names()
+
+        for index in np.arange(len(embeddings)):
+            e = embeddings[index]
+            e.sort(key=lambda x: x[0])
+            logger.info('There are ' + str(len(e)) + ' ' + embedding_names[index] + ' embeddings')
+
+        embedding_gene_names = [self._get_set_of_gene_names(x) for x in embeddings]
+        unique_name_set = np.unique([item for sublist in embedding_gene_names for item in sublist])
+
+        logger.info('There are ' +
+                    str(len(unique_name_set)) +
+                    ' total proteins')
+
+        resultsdir = os.path.join(self._outdir, 'auto')
+
+        for embedding in autoembed.fit_predict(resultsdir=resultsdir,
+                                               modality_data=embeddings,
+                                               modality_names=embedding_names,
+                                               latent_dim=self.get_dimensions(),
+                                               n_epochs=self._n_epochs,
+                                               batch_size=self._batch_size,
+                                               save_update_epochs=self._save_update_epochs):
+            yield embedding
+
+
 class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
@@ -364,6 +443,7 @@ class CellmapsCoEmbedder(object):
                  input_data_dict=None):
         """
         Constructor
+
         :param outdir: Directory to write the results of this tool
         :type outdir: str
         :param inputdir: Output directory where embeddings to be coembedded are located
