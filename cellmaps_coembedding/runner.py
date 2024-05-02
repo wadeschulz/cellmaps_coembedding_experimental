@@ -217,7 +217,7 @@ class EmbeddingGenerator(object):
 
 class AutoCoEmbeddingGenerator(EmbeddingGenerator):
     """
-    Generates co-embedding using MUSE
+    Generates co-embedding using autoembedder
     """
 
     def __init__(self, dimensions=128,
@@ -233,17 +233,20 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                  triplet_margin=1.0, dropout=0,
                  ):
         """
+        Initializes the AutoCoEmbeddingGenerator.
 
-        :param dimensions:
-        :param k: k nearest neighbors value used for clustering - clustering used for triplet loss
-        :param triplet_margin: margin for triplet loss
-        :param dropout: dropout between neural net layers
-        :param n_epochs: training epochs
-        :param n_epochs_init: initialization training epochs
-        :param outdir:
-        :param ppi_embeddingdir:
-        :param image_embeddingdir:
-        :param jackknife_percent: percent of data to withhold from training
+        :param dimensions: The dimensionality of the embedding space (default: 128).
+        :param outdir: The output directory where embeddings should be saved.
+        :param embeddings: Embedding data.
+        :param ppi_embeddingdir: Directory containing protein-protein interaction embeddings.
+        :param image_embeddingdir: Directory containing image embeddings.
+        :param embedding_names: List of names corresponding to each type of embedding provided.
+        :param jackknife_percent: Percentage of data to withhold from training as a method of resampling (default: 0).
+        :param n_epochs: Number of epochs for which the model trains (default: 250).
+        :param save_update_epochs: Boolean indicating whether to save embeddings at regular epoch intervals.
+        :param batch_size: Number of samples per batch during training (default: 16).
+        :param triplet_margin: The margin value for the triplet loss during training (default: 1.0).
+        :param dropout: The dropout rate between layers in the neural network (default: 0).
         """
         super().__init__(dimensions=dimensions, embeddings=embeddings,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -260,8 +263,9 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
 
     def get_next_embedding(self):
         """
+        Iteratively generates embeddings by fitting the autoembedder to the current data set.
 
-        :return:
+        :return: Yields the next embedding, produced by the autoembedder's fit_predict method.
         """
         embeddings, embedding_names = self._get_embeddings_and_names()
 
