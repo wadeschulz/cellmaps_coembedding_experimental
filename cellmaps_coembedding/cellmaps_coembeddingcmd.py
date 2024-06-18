@@ -56,6 +56,10 @@ def _parse_arguments(desc, args):
     parser.add_argument('--jackknife_percent', default=0.0, type=float,
                         help='Percentage of data to withhold from training'
                              'a value of 0.1 means to withhold 10 percent of the data')
+    parser.add_argument('--dropout', default=0.0, type=float,
+                        help='Percentage to use fo dropout layers in neural network')
+    parser.add_argument('--l2_norm', action='store_true',
+                        help='If set, L2 normalize coembeddings')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--name',
@@ -155,6 +159,7 @@ def main(args):
                                                n_epochs=theargs.n_epochs,
                                                n_epochs_init=theargs.n_epochs_init,
                                                jackknife_percent=theargs.jackknife_percent,
+                                               dropout=theargs.dropout,
                                                outdir=os.path.abspath(theargs.outdir),
                                                embeddings=theargs.embeddings,
                                                embedding_names=theargs.embedding_names)
@@ -163,6 +168,8 @@ def main(args):
                                                ppi_embeddingdir=theargs.ppi_embeddingdir,
                                                image_embeddingdir=theargs.image_embeddingdir,
                                                n_epochs=theargs.n_epochs,
+                                               dropout=theargs.dropout,
+                                               l2_norm=theargs.l2_norm,
                                                jackknife_percent=theargs.jackknife_percent,
                                                outdir=os.path.abspath(theargs.outdir),
                                                embeddings=theargs.embeddings,

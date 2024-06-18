@@ -230,7 +230,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs=250,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=1.0, dropout=0,
+                 triplet_margin=1.0, dropout=0, l2_norm=False
                  ):
         """
         Initializes the AutoCoEmbeddingGenerator.
@@ -247,6 +247,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
         :param batch_size: Number of samples per batch during training (default: 16).
         :param triplet_margin: The margin value for the triplet loss during training (default: 1.0).
         :param dropout: The dropout rate between layers in the neural network (default: 0).
+        :param l2_norm: If true, L2 normalize coembeddings
         """
         super().__init__(dimensions=dimensions, embeddings=embeddings,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -256,6 +257,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
         self._outdir = outdir
         self.triplet_margin = triplet_margin
         self._dropout = dropout
+        self._l2_norm = l2_norm
         self._n_epochs = n_epochs
         self._save_update_epochs = save_update_epochs
         self._batch_size = batch_size
@@ -289,7 +291,9 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                                                latent_dim=self.get_dimensions(),
                                                n_epochs=self._n_epochs,
                                                batch_size=self._batch_size,
-                                               save_update_epochs=self._save_update_epochs):
+                                               save_update_epochs=self._save_update_epochs,
+                                               dropout=self._dropout,
+                                               l2_norm=self._l2_norm):
             yield embedding
 
 
