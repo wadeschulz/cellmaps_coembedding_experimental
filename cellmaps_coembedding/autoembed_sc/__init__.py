@@ -25,7 +25,11 @@ def write_embedding_dictionary_to_file(filepath, dictionary, dims):
         writer.writerow(header_line)
         for key, value in dictionary.items():
             row = [key]
-            row.extend(value)
+            if isinstance(value, dict):
+                averaged_values = np.mean(list(value.values()), axis=0)
+                row.extend(averaged_values)
+            else:
+                row.extend(value)
             writer.writerow(row)
 
 
@@ -76,7 +80,11 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     for modality, latents in all_latents.items():
         filepath = '{}_{}_latent.tsv'.format(resultsdir, modality)
         write_embedding_dictionary_to_file(filepath, latents, data_wrapper.latent_dim)
-
+        
+    # save averaged coembedding
+    filepath = '{}_latent.tsv'.format(resultsdir)
+    write_embedding_dictionary_to_file(filepath, embeddings_by_protein, data_wrapper.latent_dim)
+    
     # save reconstructed embeddings
     for modality, outputs in all_outputs.items():
         filepath = '{}_{}_reconstructed.tsv'.format(resultsdir, modality)
