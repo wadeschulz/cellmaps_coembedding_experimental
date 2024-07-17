@@ -223,7 +223,11 @@ class uniembed_nn(nn.Module):
 
             latent = self.encoders[modality_name](modality_values)
             if self.l2_norm:
-                latent = nn.functional.normalize(latent, p=2, dim=1)
+                if len(latent.shape) > 1:
+                    latent = nn.functional.normalize(latent, p=2, dim=1)
+                else:
+                    latent = nn.functional.normalize(latent, p=2, dim=0)
+
             latents[modality_name] = latent
 
         for modality_name, modality_values in latents.items():
