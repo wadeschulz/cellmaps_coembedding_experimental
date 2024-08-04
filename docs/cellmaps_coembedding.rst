@@ -9,6 +9,11 @@ Subpackages
 
    cellmaps_coembedding.muse_sc
 
+.. toctree::
+   :maxdepth: 4
+
+   cellmaps_coembedding.autoembed_sc
+
 Submodules
 ----------
 
