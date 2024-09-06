@@ -2,6 +2,12 @@
 History
 =======
 
+0.3.0 (2024-09-06)
+------------------
+
+* Added ``--provenance`` flag to pass a path to json file with provenance information. This removes the
+  necessity of input directory to be an RO-Crate.
+
 0.2.0 (2024-07-17)
 ------------------
 
