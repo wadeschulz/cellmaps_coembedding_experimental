@@ -38,8 +38,6 @@ requirements = ['cellmaps_utils',
 
 setup_requirements = [ ]
 
-test_requirements = [ ]
-
 setup(
     author=author,
     author_email=email,
@@ -67,8 +65,6 @@ setup(
     package_dir={'cellmaps_coembedding': 'cellmaps_coembedding'},
     scripts=['cellmaps_coembedding/cellmaps_coembeddingcmd.py'],
     setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
     url=repo_url,
     version=version,
     zip_safe=False)
