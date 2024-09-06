@@ -40,7 +40,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     :param model: The neural network model.
     :type model: torch.nn.Module
     :param protein_dataset: The dataset containing protein data.
-    :type protein_dataset: Protein_Dataset
+    :type protein_dataset: cellmaps_coembedding.autoembed_sc.architecture.Protein_Dataset
     :param data_wrapper: Data handling and configurations as an object.
     :type data_wrapper: TrainingDataWrapper
     :param results_suffix: Suffix to append to results directory for saving.
@@ -80,11 +80,11 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     for modality, latents in all_latents.items():
         filepath = '{}_{}_latent.tsv'.format(resultsdir, modality)
         write_embedding_dictionary_to_file(filepath, latents, data_wrapper.latent_dim)
-        
+
     # save averaged coembedding
     filepath = '{}_latent.tsv'.format(resultsdir)
     write_embedding_dictionary_to_file(filepath, embeddings_by_protein, data_wrapper.latent_dim)
-    
+
     # save reconstructed embeddings
     for modality, outputs in all_outputs.items():
         filepath = '{}_{}_reconstructed.tsv'.format(resultsdir, modality)
