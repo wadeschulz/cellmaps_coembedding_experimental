@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
+import json
 import os
 import sys
 import logging
@@ -62,18 +63,23 @@ def _parse_arguments(desc, args):
                         help='If set, L2 normalize coembeddings')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
+    parser.add_argument('--provenance',
+                        help='Path to file containing provenance '
+                             'information about input files in JSON format. '
+                             'This is required if none of embeddings directory contains '
+                             'ro-crate-metadata.json file.')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
-                             'by --embeddings directories will be used')
+                             'by --embeddings directories or provenance file will be used')
     parser.add_argument('--organization_name',
                         help='Name of organization running this tool, needed '
                              'for FAIRSCAPE. If unset, organization name specified '
-                             'in --embedding directories will be used')
+                             'in --embedding directories or provenance file will be used')
     parser.add_argument('--project_name',
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
-                             'in --embedding directories will be used')
+                             'in --embedding directories or provenance file will be used')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -142,6 +148,12 @@ def main(args):
         raise CellmapsCoEmbeddingError('Either --ppi_embeddingdir and --image_embeddingdir, '
                                        'or --embeddings are required')
 
+    if theargs.provenance is not None:
+        with open(theargs.provenance, 'r') as f:
+            json_prov = json.load(f)
+    else:
+        json_prov = None
+
     try:
         logutils.setup_cmd_logging(theargs)
         gen = EmbeddingGenerator()
@@ -183,7 +195,8 @@ def main(args):
                                   organization_name=theargs.organization_name,
                                   project_name=theargs.project_name,
                                   skip_logging=theargs.skip_logging,
-                                  input_data_dict=theargs.__dict__).run()
+                                  input_data_dict=theargs.__dict__,
+                                  provenance=json_prov).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

@@ -444,7 +444,8 @@ class CellmapsCoEmbedder(object):
                  project_name=None,
                  provenance_utils=ProvenanceUtil(),
                  skip_logging=True,
-                 input_data_dict=None):
+                 input_data_dict=None,
+                 provenance=None):
         """
         Constructor
 
@@ -474,6 +475,7 @@ class CellmapsCoEmbedder(object):
         self._project_name = project_name
         self._organization_name = organization_name
         self._provenance_utils = provenance_utils
+        self._provenance = provenance
         self._keywords = None
         self._description = None
         self._embedding_generator = embedding_generator
@@ -524,12 +526,21 @@ class CellmapsCoEmbedder(object):
             self._project_name = prov_attrs.get_project_name()
             self._keywords = prov_attrs.get_keywords()
             self._description = prov_attrs.get_description()
+        elif self._provenance is not None:
+            self._name = self._provenance['name'] if 'name' in self._provenance else 'Coembedding'
+            self._organization_name = self._provenance['organization-name'] \
+                if 'organization-name' in self._provenance else 'NA'
+            self._project_name = self._provenance['project-name']\
+                if 'project-name' in self._provenance else 'NA'
+            self._keywords = self._provenance['keywords'] if 'keywords' in self._provenance else ['coembedding']
+            self._description = self._provenance['description'] if 'description' in self._provenance else \
+                'Coembedding of multiple embeddings'
         else:
             self._name = 'Coembedding tool'
-            self._organization_name = 'Example'
-            self._project_name = 'Example'
+            self._organization_name = 'NA'
+            self._project_name = 'NA'
             self._keywords = ['coembedding']
-            self._description = 'Example input dataset Coembedding'
+            self._description = 'Coembedding of multiple embeddings'
 
     def _write_task_start_json(self):
         """
