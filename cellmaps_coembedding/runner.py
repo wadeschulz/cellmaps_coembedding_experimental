@@ -541,6 +541,7 @@ class CellmapsCoEmbedder(object):
             self._project_name = 'NA'
             self._keywords = ['coembedding']
             self._description = 'Coembedding of multiple embeddings'
+            logger.warning("One of input directories should be ro-crate, or provenance file should be provided.")
 
     def _write_task_start_json(self):
         """
