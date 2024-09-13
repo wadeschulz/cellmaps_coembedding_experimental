@@ -2,6 +2,11 @@
 History
 =======
 
+0.3.1 (2024-09-13)
+------------------
+
+* Bug fix: raise more informative error when no embeddings overlap.
+
 0.3.0 (2024-09-06)
 ------------------
 
