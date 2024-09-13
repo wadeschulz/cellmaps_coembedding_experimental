@@ -359,6 +359,10 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                     str(len(intersection_name_set)) +
                     ' overlapping embeddings')
 
+        if len(intersection_name_set) == 0:
+            logger.error('There are no overlapping embeddings. Cannot perform coembedding.')
+            raise CellmapsCoEmbeddingError('There are no overlapping embeddings. Cannot perform coembedding.')
+
         name_index = [x[0] for x in embeddings[0] if x[0] in intersection_name_set]
 
         embedding_data = []
