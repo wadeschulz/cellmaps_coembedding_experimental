@@ -654,6 +654,17 @@ class CellmapsCoEmbedder(object):
         """
         return os.path.join(self._outdir, constants.CO_EMBEDDING_FILE)
 
+    def generate_readme(self):
+        description = getattr(cellmaps_coembedding, '__description__', 'No description provided.')
+        version = getattr(cellmaps_coembedding, '__version__', '0.0.0')
+
+        with open(os.path.join(os.path.dirname(__file__), 'readme_outputs.txt'), 'r') as f:
+            readme_outputs = f.read()
+
+        readme = readme_outputs.format(DESCRIPTION=description, VERSION=version)
+        with open(os.path.join(self._outdir, 'README.txt'), 'w') as f:
+            f.write(readme)
+
     def run(self):
         """
         Runs CM4AI Generate COEMBEDDINGS
@@ -674,6 +685,9 @@ class CellmapsCoEmbedder(object):
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_coembedding')
             self._write_task_start_json()
+
+            self.generate_readme()
+
             if self._inputdirs is None:
                 raise CellmapsCoEmbeddingError('No embeddings provided')
 

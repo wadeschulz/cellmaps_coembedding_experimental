@@ -63,6 +63,7 @@ setup(
                                     'cellmaps_coembedding.muse_sc',
                                    'cellmaps_coembedding.autoembed_sc']),
     package_dir={'cellmaps_coembedding': 'cellmaps_coembedding'},
+    package_data={'cellmaps_coembedding': ['readme_outputs.txt']},
     scripts=['cellmaps_coembedding/cellmaps_coembeddingcmd.py'],
     setup_requires=setup_requirements,
     url=repo_url,
