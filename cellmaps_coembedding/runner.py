@@ -27,8 +27,12 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+    LATENT_DIMENSIONS = 128
+    N_EPOCHS = 500
+    JACKKNIFE_PERCENT = 0.0
+    DROPOUT = 0.0
 
-    def __init__(self, dimensions=1024,
+    def __init__(self, dimensions=LATENT_DIMENSIONS,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embeddings=None,
@@ -220,17 +224,17 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
     Generates co-embedding using autoembedder
     """
 
-    def __init__(self, dimensions=128,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
                  outdir=None,
                  embeddings=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embedding_names=None,
-                 jackknife_percent=0,
-                 n_epochs=250,
+                 jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT,
+                 n_epochs=EmbeddingGenerator.N_EPOCHS,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=1.0, dropout=0, l2_norm=False
+                 triplet_margin=1.0, dropout=EmbeddingGenerator.DROPOUT, l2_norm=False
                  ):
         """
         Initializes the AutoCoEmbeddingGenerator.
@@ -301,16 +305,18 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
     """
+    N_EPOCHS_INIT = 200
 
-    def __init__(self, dimensions=128,
-                 k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
-                 n_epochs_init=200,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
+                 k=10, triplet_margin=0.1,
+                 dropout=EmbeddingGenerator.DROPOUT, n_epochs=EmbeddingGenerator.N_EPOCHS,
+                 n_epochs_init=N_EPOCHS_INIT,
                  outdir=None,
                  embeddings=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embedding_names=None,
-                 jackknife_percent=0,
+                 jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT,
                  ):
         """
 
@@ -398,7 +404,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     Generates a fake coembedding for intersection of embedding dirs
     """
 
-    def __init__(self, dimensions=128, ppi_embeddingdir=None,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS, ppi_embeddingdir=None,
                  image_embeddingdir=None, embeddings=None, embedding_names=None):
         """
         Constructor
@@ -494,6 +500,17 @@ class CellmapsCoEmbedder(object):
         else:
             self._skip_logging = skip_logging
 
+        if self._input_data_dict is None:
+            self._input_data_dict = {'outdir': self._outdir,
+                                     'inputdirs': self._inputdirs,
+                                     'embedding_generator': str(self._embedding_generator),
+                                     'name': self._name,
+                                     'project_name': self._project_name,
+                                     'organization_name': self._organization_name,
+                                     'skip_logging': self._skip_logging,
+                                     'provenance': str(self._provenance)
+                                     }
+
         logger.debug('In constructor')
 
     def _get_embedding_dirs(self, embeddings):
@@ -534,7 +551,7 @@ class CellmapsCoEmbedder(object):
             self._name = self._provenance['name'] if 'name' in self._provenance else 'Coembedding'
             self._organization_name = self._provenance['organization-name'] \
                 if 'organization-name' in self._provenance else 'NA'
-            self._project_name = self._provenance['project-name']\
+            self._project_name = self._provenance['project-name'] \
                 if 'project-name' in self._provenance else 'NA'
             self._keywords = self._provenance['keywords'] if 'keywords' in self._provenance else ['coembedding']
             self._description = self._provenance['description'] if 'description' in self._provenance else \

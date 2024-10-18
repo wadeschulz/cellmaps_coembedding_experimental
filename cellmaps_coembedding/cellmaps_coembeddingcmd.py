@@ -48,16 +48,16 @@ def _parse_arguments(desc, args):
     parser.add_argument(IMAGE_EMBEDDINGDIR,
                         help='Directory aka rocrate image embedding '
                              'file resides (Deprecated: use --embeddings flag)')
-    parser.add_argument('--latent_dimension', type=int, default=128,
+    parser.add_argument('--latent_dimension', type=int, default=EmbeddingGenerator.LATENT_DIMENSIONS,
                         help='Output dimension of embedding')
-    parser.add_argument('--n_epochs_init', default=200, type=int,
+    parser.add_argument('--n_epochs_init', default=MuseCoEmbeddingGenerator.N_EPOCHS_INIT, type=int,
                         help='# of init training epochs')
-    parser.add_argument('--n_epochs', default=500, type=int,
+    parser.add_argument('--n_epochs', default=EmbeddingGenerator.N_EPOCHS, type=int,
                         help='# of training epochs')
-    parser.add_argument('--jackknife_percent', default=0.0, type=float,
+    parser.add_argument('--jackknife_percent', default=EmbeddingGenerator.JACKKNIFE_PERCENT, type=float,
                         help='Percentage of data to withhold from training'
                              'a value of 0.1 means to withhold 10 percent of the data')
-    parser.add_argument('--dropout', default=0.0, type=float,
+    parser.add_argument('--dropout', default=EmbeddingGenerator.DROPOUT, type=float,
                         help='Percentage to use fo dropout layers in neural network')
     parser.add_argument('--l2_norm', action='store_true',
                         help='If set, L2 normalize coembeddings')
