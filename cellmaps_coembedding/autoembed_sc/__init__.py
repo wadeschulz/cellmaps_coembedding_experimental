@@ -5,6 +5,7 @@ import collections
 import torch.nn.functional as F
 import csv
 import random
+import itertools
 
 
 def write_embedding_dictionary_to_file(filepath, dictionary, dims):
@@ -73,7 +74,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
             for modality, output in outputs.items():
                 input_modality = modality.split('_')[0]
                 output_modality = modality.split('_')[1]
-                if (mask[input_modality] > 0) & (mask[output_modality] > 0):
+                if (mask[input_modality] > 0): #just need input modality to be there... #& (mask[output_modality] > 0):
                     all_outputs[modality][protein_name] = output.detach().cpu().numpy()
 
     # save latent embeddings
@@ -103,7 +104,9 @@ def fit_predict(resultsdir, modality_data,
                 triplet_margin=1.0,
                 lambda_reconstruction=1.0,
                 lambda_triplet=1.0,
+                lambda_generator=1.0,
                 lambda_l2=0.001,
+                lambda_gp=0,
                 l2_norm=False,
                 dropout=0,
                 save_epoch=50,
@@ -159,7 +162,6 @@ def fit_predict(resultsdir, modality_data,
     :rtype: generator
     """
     source_file = open('{}.txt'.format(resultsdir), 'w')
-
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
@@ -173,12 +175,25 @@ def fit_predict(resultsdir, modality_data,
     data_wrapper = TrainingDataWrapper(modality_data, modality_names, device, l2_norm, dropout,
                                        latent_dim, hidden_size_1, hidden_size_2, resultsdir)
 
-    # create model, optimizer, trainloader
-    model = uniembed_nn(data_wrapper).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=learn_rate)
+    # create models, optimizer, trainloader
+    AE_model = uniembed_nn(data_wrapper).to(device)
+    disc_models = dict()
+    disc_optimizers = dict()  
+    for modality_name, modality in data_wrapper.modalities_dict.items():
+        d = Discriminator(data_wrapper, modality).to(device)
+        disc_models[modality_name] = d
+        o = optim.Adam(d.parameters(), lr=learn_rate)
+        disc_optimizers[modality_name] =  o
+        
+    AE_optimizer = optim.Adam(AE_model.parameters(), lr=learn_rate)
+    
     protein_dataset = Protein_Dataset(data_wrapper.modalities_dict)
     train_loader = DataLoader(protein_dataset, batch_size=batch_size, shuffle=True)
-
+    
+    criterionGAN = GANLoss('lsgan').to(device)
+    criterionCycle = torch.nn.MSELoss()
+    criterionIdt = torch.nn.L1Loss()
+    
     for epoch in range(n_epochs):
 
         # train
@@ -186,27 +201,35 @@ def fit_predict(resultsdir, modality_data,
         total_reconstruction_loss = []
         total_triplet_loss = []
         total_l2_loss = []
+        total_generator_loss = []
         total_reconstruction_loss_by_modality = collections.defaultdict(list)  # key: inputmodality_outputmodality
         total_triplet_loss_by_modality = collections.defaultdict(list)  # key: modality
+        total_discriminator_loss_by_modality = collections.defaultdict(list)  # key: modality
+        total_generator_loss_by_modality = collections.defaultdict(list)  # key: modality
 
-        model.train()
+        AE_model.train()
+        for n, model in disc_models.items():
+            model.train()
+            
         # loop over all batches
         for step, (batch_data, batch_mask, batch_proteins) in enumerate(train_loader):
 
             # pass through model
-            latents, outputs = model(batch_data)
+            latents, outputs = AE_model(batch_data)
 
             batch_reconstruction_losses = torch.tensor([])
             batch_triplet_losses = torch.tensor([])
             batch_l2_losses = torch.tensor([])
-
+            batch_generator_losses = torch.tensor([])
+            batch_disc_losses = dict()
+            
             for input_modality in batch_data.keys():
 
                 # get l2 loss
                 l2_loss = torch.norm(latents[input_modality], p=2, dim=1)
                 batch_l2_losses = torch.cat((batch_l2_losses, l2_loss))
-
-                # get reconstruction losses
+                
+                # get reconstruction loss
                 for output_modality in batch_data.keys():
 
                     # protein_present in both modalities mask
@@ -223,7 +246,51 @@ def fit_predict(resultsdir, modality_data,
                     batch_reconstruction_losses = torch.cat((batch_reconstruction_losses, reconstruction_loss))
                     total_reconstruction_loss_by_modality[output_key].append(
                         torch.mean(reconstruction_loss).detach().cpu().numpy())
+            
+            
+            for output_modality in batch_data.keys():
+                batch_disc_losses[output_modality] = torch.tensor([]) #do for each modality disc separately 
+                netD = disc_models[output_modality]
+                disc_optimizer = disc_optimizers[output_modality]
+                for input_modality in batch_data.keys():
+                     # protein_present in both modalities mask
+                    mask = (batch_mask[input_modality].bool()) & (batch_mask[output_modality].bool())
+                    if torch.sum(mask) == 0:
+                        continue  # no overlap
 
+                    output_key = input_modality + '_' + output_modality
+                      
+                    # get discriminator loss 
+                    real = batch_data[output_modality]
+                    fake = outputs[output_key]
+                    pred_real = netD(real)[mask]
+                    pred_fake = netD(fake).detach()[mask]
+                    loss_D_real = criterionGAN(pred_real, True)
+                    loss_D_fake = criterionGAN(pred_fake, False)
+                    
+                     # Gradient penalty https://proceedings.mlr.press/v80/mescheder18a/mescheder18a.pdf#page=7.39
+                    loss_gp = 0.0
+                    if lambda_gp > 0:
+                        loss_gp, _ = cal_gradient_penalty(
+                            netD,
+                            real,
+                            fake.detach(),
+                            device=device,
+                            type='real',
+                            constant=0.0,
+                            lambda_gp=0.1
+                        )
+
+                    loss_D = (loss_D_real + loss_D_fake) * 0.5 + loss_gp
+                    total_discriminator_loss_by_modality[output_key].append(
+                        torch.mean(loss_D).detach().cpu().numpy())
+                    batch_disc_losses[output_modality] = torch.cat((batch_disc_losses[output_modality], loss_D.unsqueeze(-1)))
+                    
+                    loss_G =  criterionGAN(pred_fake, True)
+                    total_generator_loss_by_modality[output_key].append(torch.mean(loss_G).detach().cpu().numpy())
+                    batch_generator_losses = torch.cat((batch_generator_losses, loss_G.unsqueeze(-1)))
+        
+            #get triplet losses
             for anchor_modality in batch_data.keys():
                 posneg_modality = random.choice(list([x for x in batch_data.keys() if x != anchor_modality]))
 
@@ -253,7 +320,7 @@ def fit_predict(resultsdir, modality_data,
                     negative_indices = random.sample(protein_indexes_not_in_batch, len(positive_dist))
                     negative_data = {posneg_modality:
                                          data_wrapper.modalities_dict[posneg_modality].train_features[negative_indices]}
-                    negative_latents_dict, _ = model(negative_data)
+                    negative_latents_dict, _ = AE_model(negative_data)
                     negative_latents = negative_latents_dict[posneg_modality]
 
                 negative_dist = 1 - F.cosine_similarity(anchor_latents, negative_latents, dim=1)
@@ -270,48 +337,75 @@ def fit_predict(resultsdir, modality_data,
             if (len(batch_reconstruction_losses) == 0) | (len(batch_triplet_losses) == 0):
                 continue  # didn't have any overlapping proteins in any modalities
 
+            #calc losses
             if mean_losses:
                 reconstruction_loss = torch.mean(batch_reconstruction_losses)
                 triplet_loss = torch.mean(batch_triplet_losses)
                 l2_loss = torch.mean(batch_l2_losses)
+                generator_loss = torch.mean(batch_generator_losses)
 
             else:
                 reconstruction_loss = torch.sum(batch_reconstruction_losses)
                 triplet_loss = torch.sum(batch_triplet_losses)
                 l2_loss = torch.sum(batch_l2_losses)
+                generator_loss = torch.sum(batch_generator_losses)
 
-            batch_total = lambda_reconstruction * reconstruction_loss + lambda_triplet * triplet_loss + lambda_l2 * l2_loss
+            batch_total = lambda_reconstruction * reconstruction_loss + lambda_triplet * triplet_loss + lambda_l2 * l2_loss + lambda_generator * generator_loss
 
-            optimizer.zero_grad()
+            #stop calc gradients for discriminators while update AE
+            for modality, model in disc_models.items():
+                model.set_requires_grad(False)
+
+            AE_optimizer.zero_grad()
             batch_total.backward()
-            optimizer.step()
-
+            AE_optimizer.step()
+            
+            for modality, model in disc_models.items():
+                model.set_requires_grad(True)
+            
+            for modality in batch_data.keys():
+                disc_optimizer = disc_optimizers[modality]
+                disc_optimizer.zero_grad() 
+                if len(batch_disc_losses[modality]) == 0:
+                    continue
+                if mean_losses:
+                    torch.mean(batch_disc_losses[modality]).backward()
+                else:
+                    torch.sum(batch_disc_losses[modality]).backward()
+                disc_optimizer.step()
+                print('success')
+            
             total_loss.append(batch_total.detach().cpu().numpy())
             total_reconstruction_loss.append(reconstruction_loss.detach().cpu().numpy())
             total_triplet_loss.append(triplet_loss.detach().cpu().numpy())
             total_l2_loss.append(l2_loss.detach().cpu().numpy())
+            total_generator_loss.append(generator_loss.detach().cpu().numpy())
 
         # get result string wtith losses
-        result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (
+        result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\tgenerator_loss:%03.5f\t' % (
             epoch,
             np.mean(total_loss),
             np.mean(total_reconstruction_loss),
-            np.mean(total_triplet_loss), np.mean(total_l2_loss))
+            np.mean(total_triplet_loss), np.mean(total_l2_loss), np.mean(total_generator_loss))
         for modality, loss in total_reconstruction_loss_by_modality.items():
             result_string += '%s_reconstruction_loss:%03.5f\t' % (modality, np.mean(loss))
         for modality, loss in total_triplet_loss_by_modality.items():
             result_string += '%s_triplet_loss:%03.5f\t' % (modality, np.mean(loss))
+        for modality, loss in total_discriminator_loss_by_modality.items():
+            result_string += '%s_disc_loss:%03.5f\t' % (modality, np.mean(loss))
+        for modality, loss in total_generator_loss_by_modality.items():
+            result_string += '%s_generator_loss:%03.5f\t' % (modality, np.mean(loss))
         print(result_string, file=source_file)
 
         # save results at update epochs
         if (save_update_epochs) & (epoch % save_epoch == 0):
-            save_results(model, protein_dataset, data_wrapper, results_suffix='_epoch{}'.format(epoch))
+            save_results(AE_model, protein_dataset, data_wrapper, results_suffix='_epoch{}'.format(epoch))
 
     # save final results
-    embeddings_by_protein = save_results(model, protein_dataset, data_wrapper)
+    embeddings_by_protein = save_results(AE_model, protein_dataset, data_wrapper)
     source_file.close()
 
-    # average embeddings for each protein and return as coemembedding
+#    average embeddings for each protein and return as coemembedding
     for protein, embeddings in embeddings_by_protein.items():
         average_embedding = np.mean(list(embeddings.values()), axis=0)
         row = [protein]
