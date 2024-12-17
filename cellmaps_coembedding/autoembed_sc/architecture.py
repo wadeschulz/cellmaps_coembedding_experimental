@@ -4,7 +4,6 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-
 class ToTensor:
     """
     A class that converts a numpy ndarray to a torch Tensors.
@@ -57,7 +56,7 @@ class Protein_Dataset(Dataset):
     """
     A dataset class for handling protein data across multiple modalities.
     """
-    def __init__(self, modalities_dict):
+    def __init__(self, wrapper):
         """
         Initialize the dataset using a dictionary of modalities.
 
@@ -66,8 +65,9 @@ class Protein_Dataset(Dataset):
         """
         self.protein_dict = dict()
         self.mask_dict = dict()
-
-        for modality in modalities_dict.values():
+        self.device = wrapper.device
+        
+        for modality in wrapper.modalities_dict.values():
             for i in np.arange(len(modality.train_labels)):
                 protein_name = modality.train_labels[i]
                 protein_features = modality.train_features[i]
@@ -81,11 +81,11 @@ class Protein_Dataset(Dataset):
 
         # add zeroes if not in dictionary
         for protein_name in self.protein_dict.keys():
-            for modality in modalities_dict.values():
+            for modality in wrapper.modalities_dict.values():
                 if modality.name not in self.protein_dict[protein_name]:
-                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim)
+                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim).to(wrapper.device)
                     self.mask_dict[protein_name][modality.name] = 0
-
+                    
         self.protein_ids = dict(zip(np.arange(len(self.protein_dict.keys())), self.protein_dict.keys()))
 
     def __len__(self):
@@ -272,6 +272,7 @@ class Discriminator(nn.Module):
             param.requires_grad = requires_grad
 
      
+    
 class GANLoss(nn.Module):
     """Define different GAN objectives.
 

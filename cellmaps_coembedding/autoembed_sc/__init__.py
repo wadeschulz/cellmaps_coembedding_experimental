@@ -187,12 +187,10 @@ def fit_predict(resultsdir, modality_data,
         
     AE_optimizer = optim.Adam(AE_model.parameters(), lr=learn_rate)
     
-    protein_dataset = Protein_Dataset(data_wrapper.modalities_dict)
+    protein_dataset = Protein_Dataset(data_wrapper)
     train_loader = DataLoader(protein_dataset, batch_size=batch_size, shuffle=True)
-    
+
     criterionGAN = GANLoss('lsgan').to(device)
-    criterionCycle = torch.nn.MSELoss()
-    criterionIdt = torch.nn.L1Loss()
     
     for epoch in range(n_epochs):
 
@@ -213,14 +211,15 @@ def fit_predict(resultsdir, modality_data,
             
         # loop over all batches
         for step, (batch_data, batch_mask, batch_proteins) in enumerate(train_loader):
+       #for step, batch_data in enumerate(train_loader):
 
             # pass through model
             latents, outputs = AE_model(batch_data)
 
-            batch_reconstruction_losses = torch.tensor([])
-            batch_triplet_losses = torch.tensor([])
-            batch_l2_losses = torch.tensor([])
-            batch_generator_losses = torch.tensor([])
+            batch_reconstruction_losses = torch.tensor([]).to(device)
+            batch_triplet_losses = torch.tensor([]).to(device)
+            batch_l2_losses = torch.tensor([]).to(device)
+            batch_generator_losses = torch.tensor([]).to(device)
             batch_disc_losses = dict()
             
             for input_modality in batch_data.keys():
@@ -249,7 +248,7 @@ def fit_predict(resultsdir, modality_data,
             
             
             for output_modality in batch_data.keys():
-                batch_disc_losses[output_modality] = torch.tensor([]) #do for each modality disc separately 
+                batch_disc_losses[output_modality] = torch.tensor([]).to(device) #do for each modality disc separately 
                 netD = disc_models[output_modality]
                 disc_optimizer = disc_optimizers[output_modality]
                 for input_modality in batch_data.keys():
@@ -327,7 +326,7 @@ def fit_predict(resultsdir, modality_data,
 
                 # triplet is max of 0 or positive - negative
                 triplet_loss = torch.maximum(positive_dist - negative_dist + triplet_margin,
-                                             torch.zeros(len(positive_dist)))
+                                             torch.zeros(len(positive_dist)).to(device))
                 triplet_loss = triplet_loss[mask]
 
                 batch_triplet_losses = torch.cat((batch_triplet_losses, triplet_loss))

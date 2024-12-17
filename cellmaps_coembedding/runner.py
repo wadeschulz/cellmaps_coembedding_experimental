@@ -230,7 +230,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs=250,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=1.0, dropout=0, l2_norm=False
+                 triplet_margin=1.0, dropout=0, l2_norm=False, mean_losses=False
                  ):
         """
         Initializes the AutoCoEmbeddingGenerator.
@@ -262,6 +262,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
         self._save_update_epochs = save_update_epochs
         self._batch_size = batch_size
         self._jackknife_percent = jackknife_percent
+        self._mean_losses = mean_losses
 
     def get_next_embedding(self):
         """
@@ -293,7 +294,8 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                                                batch_size=self._batch_size,
                                                save_update_epochs=self._save_update_epochs,
                                                dropout=self._dropout,
-                                               l2_norm=self._l2_norm):
+                                               l2_norm=self._l2_norm,
+                                               mean_losses=self._mean_losses):
             yield embedding
 
 
