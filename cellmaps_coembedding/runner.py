@@ -230,7 +230,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs=250,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=1.0, dropout=0, l2_norm=False, mean_losses=False
+                 triplet_margin=0.2, dropout=0, l2_norm=False, mean_losses=False
                  ):
         """
         Initializes the AutoCoEmbeddingGenerator.
