@@ -60,6 +60,8 @@ def _parse_arguments(desc, args):
                         help='If set, use mean of losses otherwise sum')
     parser.add_argument('--dropout', default=0.0, type=float,
                         help='Percentage to use fo dropout layers in neural network')
+    parser.add_argument('--lambda_generator', default=1.0, type=float,
+                        help='Weight for GAN in loss function')
     parser.add_argument('--l2_norm', action='store_true',
                         help='If set, L2 normalize coembeddings')
     parser.add_argument('--fake_embedding', action='store_true',
@@ -176,7 +178,8 @@ def main(args):
                                                outdir=os.path.abspath(theargs.outdir),
                                                embeddings=theargs.embeddings,
                                                embedding_names=theargs.embedding_names, 
-                                               mean_losses=theargs.mean_losses)
+                                               mean_losses=theargs.mean_losses,
+                                               lambda_generator=theargs.lambda_generator)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,
