@@ -27,14 +27,14 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['cellmaps_utils',
-                'phenograph',
-                'numpy',
-                'torch',
-                'pandas',
-                'matplotlib',
-                'dill',
-                'tqdm']
+requirements = ['cellmaps_utils>=0.4.0,<1.0.0',
+                'phenograph>=1.5.7,<2.0.0',
+                'numpy>=1.24.4,<2.0.0',
+                'torch>=2.0.0,<3.0.0',
+                'pandas>=2.0.0,<3.0.0',
+                'matplotlib>=3.7.4,<4.0.0',
+                'dill>=0.3.8,0.4.0',
+                'tqdm>=4.67.1,<5.0.0']
 
 setup_requirements = [ ]
 
