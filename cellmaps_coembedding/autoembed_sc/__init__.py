@@ -196,9 +196,9 @@ def fit_predict(resultsdir, modality_data,
             # pass through model
             latents, outputs = model(batch_data)
 
-            batch_reconstruction_losses = torch.tensor([])
-            batch_triplet_losses = torch.tensor([])
-            batch_l2_losses = torch.tensor([])
+            batch_reconstruction_losses = torch.tensor([]).to(device)
+            batch_triplet_losses = torch.tensor([]).to(device)
+            batch_l2_losses = torch.tensor([]).to(device)
 
             for input_modality in batch_data.keys():
 
@@ -260,7 +260,7 @@ def fit_predict(resultsdir, modality_data,
 
                 # triplet is max of 0 or positive - negative
                 triplet_loss = torch.maximum(positive_dist - negative_dist + triplet_margin,
-                                             torch.zeros(len(positive_dist)))
+                                             torch.zeros(len(positive_dist)).to(device))
                 triplet_loss = triplet_loss[mask]
 
                 batch_triplet_losses = torch.cat((batch_triplet_losses, triplet_loss))
