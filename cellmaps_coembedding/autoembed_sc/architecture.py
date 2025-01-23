@@ -40,6 +40,7 @@ class Modality:
         :type device: torch.device
         """
         self.name = name
+        self.device = device
 
         embedding_data = []
         labels = []
@@ -83,7 +84,7 @@ class Protein_Dataset(Dataset):
         for protein_name in self.protein_dict.keys():
             for modality in modalities_dict.values():
                 if modality.name not in self.protein_dict[protein_name]:
-                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim)
+                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim).to(modality.device)
                     self.mask_dict[protein_name][modality.name] = 0
 
         self.protein_ids = dict(zip(np.arange(len(self.protein_dict.keys())), self.protein_dict.keys()))
