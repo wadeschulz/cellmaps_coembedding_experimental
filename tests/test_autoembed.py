@@ -150,7 +150,6 @@ class TestFitPredict(unittest.TestCase):
             'triplet_margin': 0.5,
             'lambda_reconstruction': 1.0,
             'lambda_triplet': 1.0,
-            'lambda_l2': 0.01,
             'l2_norm': False,
             'dropout': 0.1,
             'save_epoch': 1,
