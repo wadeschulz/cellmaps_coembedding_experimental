@@ -57,6 +57,8 @@ def _parse_arguments(desc, args):
     parser.add_argument('--jackknife_percent', default=EmbeddingGenerator.JACKKNIFE_PERCENT, type=float,
                         help='Percentage of data to withhold from training'
                              'a value of 0.1 means to withhold 10 percent of the data')
+    parser.add_argument('--mean_losses', action='store_true',
+                        help='If set, use mean of losses otherwise sum')
     parser.add_argument('--dropout', default=EmbeddingGenerator.DROPOUT, type=float,
                         help='Percentage to use fo dropout layers in neural network')
     parser.add_argument('--l2_norm', action='store_true',
@@ -185,7 +187,8 @@ def main(args):
                                                jackknife_percent=theargs.jackknife_percent,
                                                outdir=os.path.abspath(theargs.outdir),
                                                embeddings=theargs.embeddings,
-                                               embedding_names=theargs.embedding_names)
+                                               embedding_names=theargs.embedding_names,
+                                               mean_losses=theargs.mean_losses)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,

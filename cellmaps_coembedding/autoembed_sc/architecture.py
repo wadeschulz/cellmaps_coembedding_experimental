@@ -9,6 +9,7 @@ class ToTensor:
     """
     A class that converts a numpy ndarray to a torch Tensors.
     """
+
     def __call__(self, sample):
         """
         Convert the input numpy ndarray to a float Tensor.
@@ -25,6 +26,7 @@ class Modality:
     """
     Represents a single modality of data, containing training features and labels.
     """
+
     def __init__(self, training_data, name, transform, device):
         """
         Initialize the Modality object with given training data, a name, a transformation, and the device.
@@ -58,6 +60,7 @@ class Protein_Dataset(Dataset):
     """
     A dataset class for handling protein data across multiple modalities.
     """
+
     def __init__(self, modalities_dict):
         """
         Initialize the dataset using a dictionary of modalities.
@@ -67,7 +70,6 @@ class Protein_Dataset(Dataset):
         """
         self.protein_dict = dict()
         self.mask_dict = dict()
-
         for modality in modalities_dict.values():
             for i in np.arange(len(modality.train_labels)):
                 protein_name = modality.train_labels[i]
@@ -86,7 +88,6 @@ class Protein_Dataset(Dataset):
                 if modality.name not in self.protein_dict[protein_name]:
                     self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim).to(modality.device)
                     self.mask_dict[protein_name][modality.name] = 0
-
         self.protein_ids = dict(zip(np.arange(len(self.protein_dict.keys())), self.protein_dict.keys()))
 
     def __len__(self):
@@ -115,6 +116,7 @@ class TrainingDataWrapper:
     """
     Wraps training data for all modalities.
     """
+
     def __init__(self, modality_data, modality_names, device, l2_norm, dropout, latent_dim, hidden_size_1,
                  hidden_size_2,
                  resultsdir, ):
@@ -171,6 +173,7 @@ class uniembed_nn(nn.Module):
     """
     A neural network model for embedding proteins using multiple modalities.
     """
+
     def __init__(self, data_wrapper):
         """
         Initialize the model using a data wrapper that contains modality data configurations.
