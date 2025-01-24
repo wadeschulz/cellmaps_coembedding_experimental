@@ -41,7 +41,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     :param model: The neural network model.
     :type model: torch.nn.Module
     :param protein_dataset: The dataset containing protein data.
-    :type protein_dataset: Protein_Dataset
+    :type protein_dataset: cellmaps_coembedding.autoembed_sc.architecture.Protein_Dataset
     :param data_wrapper: Data handling and configurations as an object.
     :type data_wrapper: TrainingDataWrapper
     :param results_suffix: Suffix to append to results directory for saving.
@@ -74,18 +74,19 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
             for modality, output in outputs.items():
                 input_modality = modality.split('_')[0]
                 output_modality = modality.split('_')[1]
-                if (mask[input_modality] > 0): #just need input modality to be there... #& (mask[output_modality] > 0):
+                if (mask[
+                    input_modality] > 0):  # just need input modality to be there... #& (mask[output_modality] > 0):
                     all_outputs[modality][protein_name] = output.detach().cpu().numpy()
 
     # save latent embeddings
     for modality, latents in all_latents.items():
         filepath = '{}_{}_latent.tsv'.format(resultsdir, modality)
         write_embedding_dictionary_to_file(filepath, latents, data_wrapper.latent_dim)
-        
+
     # save averaged coembedding
     filepath = '{}_latent.tsv'.format(resultsdir)
     write_embedding_dictionary_to_file(filepath, embeddings_by_protein, data_wrapper.latent_dim)
-    
+
     # save reconstructed embeddings
     for modality, outputs in all_outputs.items():
         filepath = '{}_{}_reconstructed.tsv'.format(resultsdir, modality)
@@ -172,13 +173,12 @@ def fit_predict(resultsdir, modality_data,
 
     # create models, optimizer, trainloader
     AE_model = uniembed_nn(data_wrapper).to(device)
-  
-        
+
     AE_optimizer = optim.Adam(AE_model.parameters(), lr=learn_rate)
-    
+
     protein_dataset = Protein_Dataset(data_wrapper)
     train_loader = DataLoader(protein_dataset, batch_size=batch_size, shuffle=True)
-    
+
     for epoch in range(n_epochs):
 
         # train
@@ -189,8 +189,7 @@ def fit_predict(resultsdir, modality_data,
         total_triplet_loss_by_modality = collections.defaultdict(list)  # key: modality
 
         AE_model.train()
-       
-            
+
         # loop over all batches
         for step, (batch_data, batch_mask, batch_proteins) in enumerate(train_loader):
 
@@ -199,9 +198,9 @@ def fit_predict(resultsdir, modality_data,
 
             batch_reconstruction_losses = torch.tensor([]).to(device)
             batch_triplet_losses = torch.tensor([]).to(device)
-            
+
             for input_modality in batch_data.keys():
-                
+
                 # get reconstruction loss
                 for output_modality in batch_data.keys():
 
@@ -219,8 +218,8 @@ def fit_predict(resultsdir, modality_data,
                     batch_reconstruction_losses = torch.cat((batch_reconstruction_losses, reconstruction_loss))
                     total_reconstruction_loss_by_modality[output_key].append(
                         torch.mean(reconstruction_loss).detach().cpu().numpy())
-                      
-            #get triplet losses
+
+            # get triplet losses
             for anchor_modality in batch_data.keys():
                 posneg_modality = random.choice(list([x for x in batch_data.keys() if x != anchor_modality]))
 
@@ -267,7 +266,7 @@ def fit_predict(resultsdir, modality_data,
             if (len(batch_reconstruction_losses) == 0) | (len(batch_triplet_losses) == 0):
                 continue  # didn't have any overlapping proteins in any modalities
 
-            #calc losses
+            # calc losses
             if mean_losses:
                 reconstruction_loss = torch.mean(batch_reconstruction_losses)
                 triplet_loss = torch.mean(batch_triplet_losses)
@@ -281,7 +280,7 @@ def fit_predict(resultsdir, modality_data,
             AE_optimizer.zero_grad()
             batch_total.backward()
             AE_optimizer.step()
-                        
+
             total_loss.append(batch_total.detach().cpu().numpy())
             total_reconstruction_loss.append(reconstruction_loss.detach().cpu().numpy())
             total_triplet_loss.append(triplet_loss.detach().cpu().numpy())
@@ -306,7 +305,7 @@ def fit_predict(resultsdir, modality_data,
     embeddings_by_protein = save_results(AE_model, protein_dataset, data_wrapper)
     source_file.close()
 
-#    average embeddings for each protein and return as coemembedding
+    #    average embeddings for each protein and return as coemembedding
     for protein, embeddings in embeddings_by_protein.items():
         average_embedding = np.mean(list(embeddings.values()), axis=0)
         row = [protein]

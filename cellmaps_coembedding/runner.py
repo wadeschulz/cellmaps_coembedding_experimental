@@ -27,8 +27,12 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+    LATENT_DIMENSIONS = 128
+    N_EPOCHS = 500
+    JACKKNIFE_PERCENT = 0.0
+    DROPOUT = 0.0
 
-    def __init__(self, dimensions=1024,
+    def __init__(self, dimensions=LATENT_DIMENSIONS,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embeddings=None,
@@ -220,17 +224,20 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
     Generates co-embedding using autoembedder
     """
 
-    def __init__(self, dimensions=128,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
                  outdir=None,
                  embeddings=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embedding_names=None,
-                 jackknife_percent=0,
-                 n_epochs=250,
+                 jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT,
+                 n_epochs=EmbeddingGenerator.N_EPOCHS,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=0.2, dropout=0, l2_norm=False, mean_losses=False
+                 triplet_margin=0.2,
+                 dropout=EmbeddingGenerator.DROPOUT,
+                 l2_norm=False,
+                 mean_losses=False
                  ):
         """
         Initializes the AutoCoEmbeddingGenerator.
@@ -303,16 +310,18 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
     """
+    N_EPOCHS_INIT = 200
 
-    def __init__(self, dimensions=128,
-                 k=10, triplet_margin=0.1, dropout=0.25, n_epochs=500,
-                 n_epochs_init=200,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
+                 k=10, triplet_margin=0.1,
+                 dropout=EmbeddingGenerator.DROPOUT, n_epochs=EmbeddingGenerator.N_EPOCHS,
+                 n_epochs_init=N_EPOCHS_INIT,
                  outdir=None,
                  embeddings=None,
                  ppi_embeddingdir=None,
                  image_embeddingdir=None,
                  embedding_names=None,
-                 jackknife_percent=0,
+                 jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT,
                  ):
         """
 
@@ -361,6 +370,10 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                     str(len(intersection_name_set)) +
                     ' overlapping embeddings')
 
+        if len(intersection_name_set) == 0:
+            logger.error('There are no overlapping embeddings. Cannot perform coembedding.')
+            raise CellmapsCoEmbeddingError('There are no overlapping embeddings. Cannot perform coembedding.')
+
         name_index = [x[0] for x in embeddings[0] if x[0] in intersection_name_set]
 
         embedding_data = []
@@ -396,7 +409,7 @@ class FakeCoEmbeddingGenerator(EmbeddingGenerator):
     Generates a fake coembedding for intersection of embedding dirs
     """
 
-    def __init__(self, dimensions=128, ppi_embeddingdir=None,
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS, ppi_embeddingdir=None,
                  image_embeddingdir=None, embeddings=None, embedding_names=None):
         """
         Constructor
@@ -446,7 +459,8 @@ class CellmapsCoEmbedder(object):
                  project_name=None,
                  provenance_utils=ProvenanceUtil(),
                  skip_logging=True,
-                 input_data_dict=None):
+                 input_data_dict=None,
+                 provenance=None):
         """
         Constructor
 
@@ -476,6 +490,7 @@ class CellmapsCoEmbedder(object):
         self._project_name = project_name
         self._organization_name = organization_name
         self._provenance_utils = provenance_utils
+        self._provenance = provenance
         self._keywords = None
         self._description = None
         self._embedding_generator = embedding_generator
@@ -489,6 +504,17 @@ class CellmapsCoEmbedder(object):
             self._skip_logging = False
         else:
             self._skip_logging = skip_logging
+
+        if self._input_data_dict is None:
+            self._input_data_dict = {'outdir': self._outdir,
+                                     'inputdirs': self._inputdirs,
+                                     'embedding_generator': str(self._embedding_generator),
+                                     'name': self._name,
+                                     'project_name': self._project_name,
+                                     'organization_name': self._organization_name,
+                                     'skip_logging': self._skip_logging,
+                                     'provenance': str(self._provenance)
+                                     }
 
         logger.debug('In constructor')
 
@@ -526,12 +552,22 @@ class CellmapsCoEmbedder(object):
             self._project_name = prov_attrs.get_project_name()
             self._keywords = prov_attrs.get_keywords()
             self._description = prov_attrs.get_description()
+        elif self._provenance is not None:
+            self._name = self._provenance['name'] if 'name' in self._provenance else 'Coembedding'
+            self._organization_name = self._provenance['organization-name'] \
+                if 'organization-name' in self._provenance else 'NA'
+            self._project_name = self._provenance['project-name'] \
+                if 'project-name' in self._provenance else 'NA'
+            self._keywords = self._provenance['keywords'] if 'keywords' in self._provenance else ['coembedding']
+            self._description = self._provenance['description'] if 'description' in self._provenance else \
+                'Coembedding of multiple embeddings'
         else:
             self._name = 'Coembedding tool'
-            self._organization_name = 'Example'
-            self._project_name = 'Example'
+            self._organization_name = 'NA'
+            self._project_name = 'NA'
             self._keywords = ['coembedding']
-            self._description = 'Example input dataset Coembedding'
+            self._description = 'Coembedding of multiple embeddings'
+            logger.warning("One of input directories should be ro-crate, or provenance file should be provided.")
 
     def _write_task_start_json(self):
         """
@@ -640,6 +676,17 @@ class CellmapsCoEmbedder(object):
         """
         return os.path.join(self._outdir, constants.CO_EMBEDDING_FILE)
 
+    def generate_readme(self):
+        description = getattr(cellmaps_coembedding, '__description__', 'No description provided.')
+        version = getattr(cellmaps_coembedding, '__version__', '0.0.0')
+
+        with open(os.path.join(os.path.dirname(__file__), 'readme_outputs.txt'), 'r') as f:
+            readme_outputs = f.read()
+
+        readme = readme_outputs.format(DESCRIPTION=description, VERSION=version)
+        with open(os.path.join(self._outdir, 'README.txt'), 'w') as f:
+            f.write(readme)
+
     def run(self):
         """
         Runs CM4AI Generate COEMBEDDINGS
@@ -660,6 +707,9 @@ class CellmapsCoEmbedder(object):
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_coembedding')
             self._write_task_start_json()
+
+            self.generate_readme()
+
             if self._inputdirs is None:
                 raise CellmapsCoEmbeddingError('No embeddings provided')
 

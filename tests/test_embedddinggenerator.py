@@ -35,7 +35,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
             e_gen._get_embedding_file_and_name(temp_dir)
             self.fail('expected exception')
         except CellmapsCoEmbeddingError as ce:
-            self.assertTrue('Embedding file not found in ' in str(ce))            
+            self.assertTrue('Embedding file not found in ' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
 
@@ -94,7 +94,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         self.assertEqual(read_embeddings, expected_embeddings)
 
     def test_get_dimensions(self):
-        self.assertEqual(self.e_gen.get_dimensions(), 1024)
+        self.assertEqual(self.e_gen.get_dimensions(), 128)
 
     @patch('cellmaps_coembedding.muse_sc.muse_fit_predict')
     @patch.object(MuseCoEmbeddingGenerator, '_get_embeddings_and_names')
@@ -102,7 +102,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         generator = MuseCoEmbeddingGenerator(outdir=self.temp_dir, jackknife_percent=1.0)
 
         def mock_embeddings_and_names():
-            return [[['name1', 0.1, 0.2], ['name2', 0.3, 0.4]], 
+            return [[['name1', 0.1, 0.2], ['name2', 0.3, 0.4]],
                    [['name2', 0.5, 0.6], ['name3', 0.7, 0.8]]], ['PPI', 'image']
 
         mock_get_embeddings_and_names.side_effect = mock_embeddings_and_names

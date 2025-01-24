@@ -1,7 +1,7 @@
 =====================
 Cell Maps CoEmbedder
 =====================
-
+The Cell Maps CoEmbedding is part of the Cell Mapping Toolkit
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_coembedding.svg
         :target: https://pypi.python.org/pypi/cellmaps_coembedding
@@ -53,7 +53,7 @@ Installation
    pip install dist/cellmaps_coembedding*whl
 
 
-Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
+Run **make** command with no arguments to see other build/deploy options including creation of Docker image
 
 .. code-block::
 
@@ -80,6 +80,8 @@ Output:
    dockerbuild          build docker image and store in local repository
    dockerpush           push image to dockerhub
 
+Before running tests, please install ``pip install -r requirements_dev``.
+
 For developers
 -------------------------------------------
 
@@ -105,7 +107,7 @@ against those changes.
 Needed files
 ------------
 
-The output directories for the image embeddings (see `Cell Maps Image Embedding <https://github.com/idekerlab/cellmaps_image_embedding/>`__) and protein-protein interaction network embeddings (see `Cell Maps PPI Embedding <https://github.com/idekerlab/cellmaps_ppi_embedding/>`__) are required. 
+The output directories for the image embeddings (see `Cell Maps Image Embedding <https://github.com/idekerlab/cellmaps_image_embedding/>`__) and protein-protein interaction network embeddings (see `Cell Maps PPI Embedding <https://github.com/idekerlab/cellmaps_ppi_embedding/>`__) are required.
 
 
 Usage
@@ -116,7 +118,7 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 **Example usage**
 
 .. code-block::
- 
+
    cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --embeddings ./cellmaps_image_embedding_outdir ./cellmaps_ppi_embedding_outdir
 
 
