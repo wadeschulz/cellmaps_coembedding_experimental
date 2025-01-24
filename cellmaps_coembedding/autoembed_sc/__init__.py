@@ -176,7 +176,7 @@ def fit_predict(resultsdir, modality_data,
 
     AE_optimizer = optim.Adam(AE_model.parameters(), lr=learn_rate)
 
-    protein_dataset = Protein_Dataset(data_wrapper)
+    protein_dataset = Protein_Dataset(data_wrapper.modalities_dict)
     train_loader = DataLoader(protein_dataset, batch_size=batch_size, shuffle=True)
 
     for epoch in range(n_epochs):

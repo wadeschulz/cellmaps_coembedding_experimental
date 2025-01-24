@@ -60,7 +60,7 @@ class Protein_Dataset(Dataset):
     A dataset class for handling protein data across multiple modalities.
     """
 
-    def __init__(self, wrapper):
+    def __init__(self, modalities_dict):
         """
         Initialize the dataset using a dictionary of modalities.
 
@@ -69,9 +69,7 @@ class Protein_Dataset(Dataset):
         """
         self.protein_dict = dict()
         self.mask_dict = dict()
-        self.device = wrapper.device
-
-        for modality in wrapper.modalities_dict.values():
+        for modality in modalities_dict.values():
             for i in np.arange(len(modality.train_labels)):
                 protein_name = modality.train_labels[i]
                 protein_features = modality.train_features[i]
@@ -85,11 +83,10 @@ class Protein_Dataset(Dataset):
 
         # add zeroes if not in dictionary
         for protein_name in self.protein_dict.keys():
-            for modality in wrapper.modalities_dict.values():
+            for modality in modalities_dict.values():
                 if modality.name not in self.protein_dict[protein_name]:
-                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim).to(wrapper.device)
+                    self.protein_dict[protein_name][modality.name] = torch.zeros(modality.input_dim)
                     self.mask_dict[protein_name][modality.name] = 0
-
         self.protein_ids = dict(zip(np.arange(len(self.protein_dict.keys())), self.protein_dict.keys()))
 
     def __len__(self):
