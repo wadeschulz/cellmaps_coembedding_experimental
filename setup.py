@@ -6,12 +6,11 @@ import os
 import re
 from setuptools import setup, find_packages
 
-
 with open(os.path.join('cellmaps_coembedding', '__init__.py')) as ver_file:
     for line in ver_file:
         line = line.rstrip()
         if line.startswith('__version__'):
-            version=re.sub("'", "", line[line.index("'"):])
+            version = re.sub("'", "", line[line.index("'"):])
         elif line.startswith('__description__'):
             desc = re.sub("'", "", line[line.index("'"):])
         elif line.startswith('__repo_url__'):
@@ -36,7 +35,7 @@ requirements = ['cellmaps_utils>=0.4.0,<1.0.0',
                 'dill>=0.3.8,<0.4.0',
                 'tqdm>=4.67.1,<5.0.0']
 
-setup_requirements = [ ]
+setup_requirements = []
 
 setup(
     author=author,
@@ -61,7 +60,7 @@ setup(
     name='cellmaps_coembedding',
     packages=find_packages(include=['cellmaps_coembedding',
                                     'cellmaps_coembedding.muse_sc',
-                                   'cellmaps_coembedding.autoembed_sc']),
+                                    'cellmaps_coembedding.protein_gps']),
     package_dir={'cellmaps_coembedding': 'cellmaps_coembedding'},
     package_data={'cellmaps_coembedding': ['readme_outputs.txt']},
     scripts=['cellmaps_coembedding/cellmaps_coembeddingcmd.py'],

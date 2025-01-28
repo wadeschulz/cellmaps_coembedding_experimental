@@ -11,7 +11,7 @@ from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_coembedding
-from cellmaps_coembedding.runner import AutoCoEmbeddingGenerator, EmbeddingGenerator
+from cellmaps_coembedding.runner import EmbeddingGenerator, ProteinGPSCoEmbeddingGenerator
 from cellmaps_coembedding.runner import MuseCoEmbeddingGenerator
 from cellmaps_coembedding.runner import FakeCoEmbeddingGenerator
 from cellmaps_coembedding.runner import CellmapsCoEmbedder
@@ -40,8 +40,10 @@ def _parse_arguments(desc, args):
                         help='Filepath to .tsv with embeddings. Requires two or more paths.')
     parser.add_argument('--embedding_names', nargs='+',
                         help='Name corresponding to each filepath input in --embeddings. ')
-    parser.add_argument('--algorithm', choices=['auto', 'muse'], default='muse',
-                        help='Algorithm to use for coembedding. Defaults to MUSE.')
+    parser.add_argument('--algorithm', choices=['auto', 'muse', 'proteingps'], default='muse',
+                        help='Algorithm to use for coembedding. Defaults to MUSE. "auto" is deprecated, '
+                             'and new name "proteingps" should be used.'
+                        )
     parser.add_argument(PPI_EMBEDDINGDIR,
                         help='Directory aka rocrate where ppi '
                              'embedding file resides (Deprecated: use --embeddings flag)')
@@ -139,6 +141,11 @@ def main(args):
     theargs.program = args[0]
     theargs.version = cellmaps_coembedding.__version__
 
+    if theargs.algorithm == 'auto':
+        logging.warning('"auto" is deprecated and will default to "proteingps". Please use "muse" or "proteingps" '
+                        'instead.')
+        theargs.algorithm = 'proteingps'  # Redirect to 'proteingps'
+
     if (theargs.ppi_embeddingdir or theargs.image_embeddingdir) and theargs.embeddings:
         raise CellmapsCoEmbeddingError('Use either --ppi_embeddingdir and --image_embeddingdir or --embeddings, '
                                        'not both')
@@ -177,18 +184,18 @@ def main(args):
                                                outdir=os.path.abspath(theargs.outdir),
                                                embeddings=theargs.embeddings,
                                                embedding_names=theargs.embedding_names)
-            if theargs.algorithm == 'auto':
-                gen = AutoCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
-                                               ppi_embeddingdir=theargs.ppi_embeddingdir,
-                                               image_embeddingdir=theargs.image_embeddingdir,
-                                               n_epochs=theargs.n_epochs,
-                                               dropout=theargs.dropout,
-                                               l2_norm=theargs.l2_norm,
-                                               jackknife_percent=theargs.jackknife_percent,
-                                               outdir=os.path.abspath(theargs.outdir),
-                                               embeddings=theargs.embeddings,
-                                               embedding_names=theargs.embedding_names,
-                                               mean_losses=theargs.mean_losses)
+            if theargs.algorithm == 'auto' or theargs.algorithm == 'proteingps':
+                gen = ProteinGPSCoEmbeddingGenerator(dimensions=theargs.latent_dimension,
+                                                     ppi_embeddingdir=theargs.ppi_embeddingdir,
+                                                     image_embeddingdir=theargs.image_embeddingdir,
+                                                     n_epochs=theargs.n_epochs,
+                                                     dropout=theargs.dropout,
+                                                     l2_norm=theargs.l2_norm,
+                                                     jackknife_percent=theargs.jackknife_percent,
+                                                     outdir=os.path.abspath(theargs.outdir),
+                                                     embeddings=theargs.embeddings,
+                                                     embedding_names=theargs.embedding_names,
+                                                     mean_losses=theargs.mean_losses)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,

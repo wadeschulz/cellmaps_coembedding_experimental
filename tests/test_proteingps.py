@@ -3,7 +3,7 @@ import shutil
 import tempfile
 import unittest
 
-from cellmaps_coembedding.autoembed_sc import *
+from cellmaps_coembedding.protein_gps import *
 
 
 class TestToTensor(unittest.TestCase):
@@ -73,7 +73,7 @@ class Testuniembednn(unittest.TestCase):
         self.assertIn('test_modality_test_modality', outputs)
 
 
-class TestAutoEmbedd(unittest.TestCase):
+class TestProteinGPS(unittest.TestCase):
 
     def test_write_embedding_dictionary_to_file(self):
         temp_dir = tempfile.mkdtemp()
@@ -109,7 +109,7 @@ class TestAutoEmbedd(unittest.TestCase):
             ]
             modality_names = ['testmod1', 'testmod2']
             device = torch.device("cpu")
-            result_dir = os.path.join(temp_dir, 'auto')
+            result_dir = os.path.join(temp_dir, 'proteingps')
             data_wrapper = TrainingDataWrapper(modality_data, modality_names, device, False, 0.5, 2, 10, 5, result_dir)
             protein_dataset = Protein_Dataset(data_wrapper.modalities_dict)
             model = uniembed_nn(data_wrapper)

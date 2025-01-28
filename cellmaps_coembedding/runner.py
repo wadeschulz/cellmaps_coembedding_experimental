@@ -16,7 +16,7 @@ from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 import cellmaps_coembedding
 import cellmaps_coembedding.muse_sc as muse
-import cellmaps_coembedding.autoembed_sc as autoembed
+import cellmaps_coembedding.protein_gps as proteingps
 from cellmaps_coembedding.exceptions import CellmapsCoEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -219,9 +219,9 @@ class EmbeddingGenerator(object):
         raise NotImplementedError('Subclasses should implement')
 
 
-class AutoCoEmbeddingGenerator(EmbeddingGenerator):
+class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
     """
-    Generates co-embedding using autoembedder
+    Generates co-embedding using proteingps
     """
 
     def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
@@ -240,7 +240,7 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                  mean_losses=False
                  ):
         """
-        Initializes the AutoCoEmbeddingGenerator.
+        Initializes the ProteinGPSCoEmbeddingGenerator.
 
         :param dimensions: The dimensionality of the embedding space (default: 128).
         :param outdir: The output directory where embeddings should be saved.
@@ -273,9 +273,9 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
 
     def get_next_embedding(self):
         """
-        Iteratively generates embeddings by fitting the autoembedder to the current data set.
+        Iteratively generates embeddings by fitting the proteingps to the current data set.
 
-        :return: Yields the next embedding, produced by the autoembedder's fit_predict method.
+        :return: Yields the next embedding, produced by the proteingps embedder's fit_predict method.
         """
         embeddings, embedding_names = self._get_embeddings_and_names()
 
@@ -291,18 +291,18 @@ class AutoCoEmbeddingGenerator(EmbeddingGenerator):
                     str(len(unique_name_set)) +
                     ' total proteins')
 
-        resultsdir = os.path.join(self._outdir, 'auto')
+        resultsdir = os.path.join(self._outdir, 'proteingps')
 
-        for embedding in autoembed.fit_predict(resultsdir=resultsdir,
-                                               modality_data=embeddings,
-                                               modality_names=embedding_names,
-                                               latent_dim=self.get_dimensions(),
-                                               n_epochs=self._n_epochs,
-                                               batch_size=self._batch_size,
-                                               save_update_epochs=self._save_update_epochs,
-                                               dropout=self._dropout,
-                                               l2_norm=self._l2_norm,
-                                               mean_losses=self._mean_losses):
+        for embedding in proteingps.fit_predict(resultsdir=resultsdir,
+                                                modality_data=embeddings,
+                                                modality_names=embedding_names,
+                                                latent_dim=self.get_dimensions(),
+                                                n_epochs=self._n_epochs,
+                                                batch_size=self._batch_size,
+                                                save_update_epochs=self._save_update_epochs,
+                                                dropout=self._dropout,
+                                                l2_norm=self._l2_norm,
+                                                mean_losses=self._mean_losses):
             yield embedding
 
 
@@ -402,6 +402,24 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
             row = [name_index[index]]
             row.extend(embedding)
             yield row
+
+
+class AutoCoEmbeddingGenerator(ProteinGPSCoEmbeddingGenerator):
+    """
+    Generates co-embedding using proteingps
+
+    .. deprecated:: 1.0.0
+       The embedding was renamed to proteingps. This class is now called ProteinGPSCoEmbeddingGenerator.
+    """
+
+    def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS, outdir=None, embeddings=None,
+                 ppi_embeddingdir=None, image_embeddingdir=None, embedding_names=None,
+                 jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT, n_epochs=EmbeddingGenerator.N_EPOCHS,
+                 save_update_epochs=True, batch_size=16, triplet_margin=0.2, dropout=EmbeddingGenerator.DROPOUT,
+                 l2_norm=False, mean_losses=False):
+        super().__init__(dimensions, outdir, embeddings, ppi_embeddingdir, image_embeddingdir, embedding_names,
+                         jackknife_percent, n_epochs, save_update_epochs, batch_size, triplet_margin, dropout, l2_norm,
+                         mean_losses)
 
 
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
