@@ -2,6 +2,24 @@
 History
 =======
 
+1.0.0 (2025-01-28)
+-------------------
+
+* Rename auto coembedding name and proteinGPS. `--algorithm auto` option is depreacted and `--algorithm proteingps`
+  should be used. The coembedding implementation was moved to `ProteinGPSCoEmbeddingGenerator` class and
+  `AutoCoEmbeddingGenerator` is deprecated and calls proteingps. The package name was renamed from `autoembed_sc`
+  to `proteingps`.
+
+* Added `mean_losses` mean loses flag and argument in `ProteinGPSCoEmbeddingGenerator`. If set, uses mean of losses
+  otherwise sum of losses.
+
+* Constants updated in `ProteinGPSCoEmbeddingGenerator` (triplet_margin=0.2) and in proteingps's fit_predict
+  (triplet_margin=0.2, lambda_reconstruction=5.0, lambda_triplet=5.0)
+
+* Bug fix: add missing a `.to(device)` call to ensure tensors are correctly moved to the appropriate device.
+
+* Update version bounds of required packages
+
 0.4.0 (2024-12-02)
 -------------------
 
