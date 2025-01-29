@@ -3,9 +3,8 @@ Inputs
 =======
 
 The tool takes as input path to directories containing embedding file (where it looks for files named ``image_emd.tsv``
-or ``ppi_emd.tsv``) or paths to specific embedding files. It requires two embedding files in TSV format
-(in the future two or more embedding files will be supported). If directories are ro-crates it uses the json files to
-retrieve the metadata.
+or ``ppi_emd.tsv``) or paths to specific embedding files. It requires two or more embedding files in TSV format.
+If directories are ro-crates it uses the json files to retrieve the metadata.
 
 
 -  ``embeddings files``

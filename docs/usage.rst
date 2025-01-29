@@ -53,6 +53,13 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 *Optional*
 
+- ``--embedding_names``
+    Names corresponding to each filepath input in --embeddings.
+
+- ``--algorithm``
+    Algorithm to use for coembedding. Choices: 'auto', 'muse', 'proteingps'. Defaults to 'muse'.
+    'auto' is deprecated, and 'proteingps' should be used instead.
+
 - ``--latent_dimension``
     Output dimension of the embedding. Default is 128.
 
@@ -64,6 +71,15 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 - ``--jackknife_percent``
     Percentage of data to withhold from training. For example, a value of 0.1 means to withhold 10 percent of the data.
+
+- ``--mean_losses``
+    If set, use the mean of losses; otherwise, sum the losses.
+
+- ``--dropout``
+    Percentage to use for dropout layers in the neural network.
+
+- ``--l2_norm``
+    If set, L2 normalize coembeddings.
 
 - ``--fake_embedding``
     If set, generates fake co-embeddings.
@@ -81,7 +97,7 @@ For information invoke :code:`cellmaps_coembeddingcmd.py -h`
 
 .. code-block::
 
-   cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --image_embeddingdir ./cellmaps_image_embedding_outdir --ppi_embeddingdir ./cellmaps_ppi_embedding_outdir
+   cellmaps_coembeddingcmd.py ./cellmaps_coembedding_outdir --embeddings ./cellmaps_image_embedding_outdir ./cellmaps_ppi_embedding_outdir
 
 Via Docker
 ---------------
