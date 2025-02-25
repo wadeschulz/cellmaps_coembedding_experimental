@@ -62,7 +62,7 @@ setup(
                                     'cellmaps_coembedding.muse_sc',
                                     'cellmaps_coembedding.protein_gps']),
     package_dir={'cellmaps_coembedding': 'cellmaps_coembedding'},
-    package_data={'cellmaps_coembedding': ['readme_outputs.txt']},
+    package_data={'cellmaps_coembedding': ['readme_outputs.txt', 'corum_M.tsv']},
     scripts=['cellmaps_coembedding/cellmaps_coembeddingcmd.py'],
     setup_requires=setup_requirements,
     url=repo_url,
