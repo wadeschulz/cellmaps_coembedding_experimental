@@ -33,7 +33,8 @@ requirements = ['cellmaps_utils>=0.4.0,<1.0.0',
                 'pandas>=2.0.0,<3.0.0',
                 'matplotlib>=3.7.4,<4.0.0',
                 'dill>=0.3.8,<0.4.0',
-                'tqdm>=4.67.1,<5.0.0']
+                'tqdm>=4.67.1,<5.0.0',
+                'scipy>=1.10.1,<1.11']
 
 setup_requirements = []
 

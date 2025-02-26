@@ -1,34 +1,55 @@
-import ndex2
-import scipy
 import random
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, gaussian_kde
 import pandas as pd
-import os
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-import seaborn as sns
 from cellmaps_coembedding.muse_sc.df_utils import *
-from sklearn.metrics.pairwise import manhattan_distances, euclidean_distances, cosine_similarity
 import numpy as np
 
 
-def plot_kde_from_df(df, kde_figure='sim_muse.png'):
+def plot_kde_from_df(df, outdir, kde_figure='sim_muse.png'):
     """
-    Plots the KDE for similarity scores from a given DataFrame.
+    Plots the KDE (Kernel Density Estimate) of similarity scores for CORUM and non-CORUM pairs.
 
-    Args:
-    :param df: A DataFrame containing 'Similarity' values and 'Type' labels.
-    :type df: pd.DataFrame
+    :param df: A DataFrame with 'Similarity' values and 'Type' labels ('CORUM pair' or 'non-CORUM pair')
+    :type df: pandas.DataFrame
+    :param outdir: Output directory
+    :type outdir: str
+    :param kde_figure: The filename (or path) to save the resulting figure, defaults to 'sim_muse.png'
+    :type kde_figure: str, optional
+    :return: This function does not return anything. It saves a figure and closes the plot.
+    :rtype: None
     """
+    df_corum = df[df['Type'] == 'CORUM pair']['Similarity'].dropna()
+    df_non_corum = df[df['Type'] == 'non-CORUM pair']['Similarity'].dropna()
+    kde_corum = gaussian_kde(df_corum)
+    kde_non_corum = gaussian_kde(df_non_corum)
+    x_min = df['Similarity'].min()
+    x_max = df['Similarity'].max()
+    x = np.linspace(x_min, x_max, 200)
     plt.figure(figsize=(8, 6))
-    sns.kdeplot(data=df[df['Type'] == 'CORUM pair'], x='Similarity', color='green', label='CORUM pair')
-    sns.kdeplot(data=df[df['Type'] == 'non-CORUM pair'], x='Similarity', color='grey', label='non-CORUM pair')
+    plt.plot(x, kde_corum(x), color='green', label='CORUM pair')
+    plt.plot(x, kde_non_corum(x), color='grey', label='non-CORUM pair')
+    plt.xlabel('Similarity')
+    plt.ylabel('Density')
+    plt.ylim(bottom=0)
     plt.legend()
-    plt.savefig(kde_figure, dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(outdir, kde_figure), dpi=300, bbox_inches='tight')
     plt.close()
 
 
-def plot_embedding_eval(results_df, embedding_eval_figure='embedding_eval.png'):
+def plot_embedding_eval(results_df, outdir, embedding_eval_figure='embedding_eval.png'):
+    """
+    Plots the enrichment results (effect sizes) for various embeddings with their confidence intervals.
+
+    :param results_df: A DataFrame with columns 'Embedding' and 'Result' (the enrichment effect sizes)
+    :type results_df: pandas.DataFrame
+    :param outdir: Output directory
+    :type outdir: str
+    :param embedding_eval_figure: The filename (or path) to save the figure, defaults to 'embedding_eval.png'
+    :type embedding_eval_figure: str, optional
+    :return: This function does not return anything. It saves a figure and closes the plot.
+    :rtype: None
+    """
     color_map = {
         "ppi": "#659AD2",
         'image': '#c30000',
@@ -50,9 +71,10 @@ def plot_embedding_eval(results_df, embedding_eval_figure='embedding_eval.png'):
         bootstrap_mean_diff_average = np.mean(bootstrap_mean_diff)
         # shift so null is true
         shifted = np.array([x - bootstrap_mean_diff_average for x in bootstrap_mean_diff])
-        # p-value = how many differences are more extreme than actual mean difference if null true; add 1 so p-value is not 0
+        # p-value = how many differences are more extreme than actual mean difference if null true; add 1 so p-value
+        # is not 0
         pval = float((1 + len(shifted[shifted > np.abs(bootstrap_mean_diff_average)])) / (1 + len(shifted)) + (
-                1 + len(shifted[shifted < -np.abs(bootstrap_mean_diff_average)])) / (1 + len(shifted)))
+            1 + len(shifted[shifted < -np.abs(bootstrap_mean_diff_average)])) / (1 + len(shifted)))
         sig = False
         if embedding != 'MUSE':
             if pval < 0.05:
@@ -74,19 +96,44 @@ def plot_embedding_eval(results_df, embedding_eval_figure='embedding_eval.png'):
             ax.text(mean_result, 2 + 0.2 * (idx - len(dataset_path_keys) / 2), '*', fontsize=15, color='black',
                     ha='center', va='center')
 
-    plt.yticks([])  # Hides y-axis ticks
-    # Adjust the legend
+    plt.yticks([])
     plt.xlabel('Enrichment')
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.xlim((0, 1))
-    # Save and show the plot
     plt.tight_layout()
-    plt.savefig(embedding_eval_figure, dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(outdir, embedding_eval_figure), dpi=300, bbox_inches='tight')
     plt.close()
 
 
 def get_embedding_eval_data(dataset_paths, edges, num_samplings, num_edges, kde_file, eval_file, common_proteins=None):
+    """
+    Calculates enrichment effect sizes for different embeddings based on a reference adjacency (e.g., CORUM).
+    It also saves data for KDE plotting from the MUSE embedding.
+
+    :param dataset_paths: Dictionary with keys as embedding names ('ppi', 'image', 'MUSE', etc.)
+                         and values as paths to TSV files with embedding vectors. Each file must
+                         be indexed by protein IDs.
+    :type dataset_paths: dict
+    :param edges: A DataFrame representing a square adjacency matrix (e.g., CORUM). Rows/columns
+                  are protein IDs, and the entries are 1 (same complex) or 0 (different complex).
+    :type edges: pandas.DataFrame
+    :param num_samplings: Number of bootstrap iterations for effect size calculation
+    :type num_samplings: int
+    :param num_edges: Number of edges to sample for both CORUM (true) and non-CORUM (false) in each bootstrap
+    :type num_edges: int
+    :param kde_file: Path to CSV file where MUSE similarity scores (CORUM vs. non-CORUM) are saved
+    :type kde_file: str
+    :param eval_file: Path to CSV file where computed effect sizes for each embedding are saved
+    :type eval_file: str
+    :param common_proteins: If provided, restricts the analysis to this set of proteins. Otherwise, it uses
+                            the intersection of all embeddings’ protein IDs.
+    :type common_proteins: set, optional
+    :return: This function does not return anything. It saves two CSV files:
+             - `kde_file` with MUSE similarity scores
+             - `eval_file` with effect sizes for each embedding
+    :rtype: None
+    """
     dataframes = {dataset: pd.read_table(dataset_paths[dataset], index_col=0) for dataset in dataset_paths.keys()}
     if 'ppi' in dataset_paths.keys() and 'image' in dataset_paths.keys():
         df1 = dataframes['ppi']
@@ -101,8 +148,6 @@ def get_embedding_eval_data(dataset_paths, edges, num_samplings, num_edges, kde_
     if common_proteins is None:
         common_proteins = set.intersection(*index_sets)
 
-    eval_set = list(common_proteins.intersection(edges.index))
-
     # Calculate for each latent embedding
     for modality_name, df in dataframes.items():
         eval_set = list(common_proteins.intersection(edges.index))
@@ -116,7 +161,7 @@ def get_embedding_eval_data(dataset_paths, edges, num_samplings, num_edges, kde_
         sim_df_values = filtered_df.values[upper_tri_indices]
         filtered_edges_values = filtered_edges.values[upper_tri_indices]
 
-        for sampling in np.arange(num_samplings):
+        for _ in np.arange(num_samplings):
             true = random.choices(sim_df_values[filtered_edges_values == 1], k=num_edges)
             false = random.choices(sim_df_values[filtered_edges_values == 0], k=num_edges)
             u, p = mannwhitneyu(true, false, alternative='greater')
@@ -126,22 +171,47 @@ def get_embedding_eval_data(dataset_paths, edges, num_samplings, num_edges, kde_
         if modality_name == 'MUSE':
             true = sim_df_values[filtered_edges_values == 1]
             false = sim_df_values[filtered_edges_values == 0]
-            # u, p = mannwhitneyu(true, false, alternative='greater')
-            # print(p)
             kde_data = pd.DataFrame({
                 'Similarity': np.concatenate([true, false]),
                 'Type': ['CORUM pair'] * len(true) + ['non-CORUM pair'] * len(false)
             })
             kde_data.to_csv(kde_file, index=False)
 
-    # Convert results to DataFrame
     results_df = pd.DataFrame(results)
     results_df.to_csv(eval_file, index=False)
 
 
 def generate_embedding_evaluation_figures(coembedding, ppi=None, image=None, outdir='.', num_samplings=1000,
                                           num_edges=1000):
+    """
+    Generates figures and CSV files evaluating the MUSE (co-embedding) along with optional 'ppi' and 'image' embeddings.
 
+    Steps:
+      1. Loads embeddings from the provided paths.
+      2. Loads a reference adjacency matrix (CORUM).
+      3. Performs enrichment evaluation using Mann-Whitney U tests.
+      4. Saves similarity data for KDE (MUSE embedding) and effect sizes (all embeddings).
+      5. Plots and saves a KDE figure (MUSE) and an enrichment comparison plot.
+
+    :param coembedding: Directory path containing 'coembedding_emd.tsv' for the MUSE embedding
+    :type coembedding: str
+    :param ppi: Directory path containing 'ppi_emd.tsv' for the PPI-based embedding (optional)
+    :type ppi: str, optional
+    :param image: Directory path containing 'image_emd.tsv' for the image-based embedding (optional)
+    :type image: str, optional
+    :param outdir: Output directory for saving figures and CSV files
+    :type outdir: str, optional
+    :param num_samplings: Number of bootstrap samplings for effect size calculation
+    :type num_samplings: int, optional
+    :param num_edges: Number of edges to sample (CORUM vs. non-CORUM) in each bootstrap iteration
+    :type num_edges: int, optional
+    :return: This function does not return anything, but writes two CSV files and saves two figures:
+             - 'sim_muse_data.csv' (MUSE similarity scores for CORUM vs. non-CORUM)
+             - 'embedding_eval.csv' (enrichment effect sizes for each embedding)
+             - 'sim_muse.png' (KDE figure)
+             - 'embedding_eval.png' (enrichment comparison figure)
+    :rtype: None
+    """
     dataset_paths = {'MUSE': os.path.join(coembedding, 'coembedding_emd.tsv')}
     if ppi:
         dataset_paths['ppi'] = os.path.join(ppi, 'ppi_emd.tsv')
@@ -157,8 +227,8 @@ def generate_embedding_evaluation_figures(coembedding, ppi=None, image=None, out
     get_embedding_eval_data(dataset_paths, corum_M, num_samplings=num_samplings, num_edges=num_edges, kde_file=kde_file,
                             eval_file=eval_file)
 
-    kde_data = pd.read_csv(kde_file, index_col=0)
-    plot_kde_from_df(kde_data)
+    kde_data = pd.read_csv(kde_file)
+    plot_kde_from_df(kde_data, outdir)
 
     embedding_eval_df = pd.read_csv(eval_file)
-    plot_embedding_eval(embedding_eval_df)
+    plot_embedding_eval(embedding_eval_df, outdir)
