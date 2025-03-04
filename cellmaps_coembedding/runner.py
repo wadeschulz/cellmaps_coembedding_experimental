@@ -28,9 +28,9 @@ class EmbeddingGenerator(object):
     network embeddings
     """
     LATENT_DIMENSIONS = 128
-    N_EPOCHS = 500
+    N_EPOCHS = 100
     JACKKNIFE_PERCENT = 0.0
-    DROPOUT = 0.0
+    DROPOUT = 0.5
 
     def __init__(self, dimensions=LATENT_DIMENSIONS,
                  ppi_embeddingdir=None,
@@ -310,7 +310,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
     """
     Generats co-embedding using MUSE
     """
-    N_EPOCHS_INIT = 200
+    N_EPOCHS_INIT = 100
 
     def __init__(self, dimensions=EmbeddingGenerator.LATENT_DIMENSIONS,
                  k=10, triplet_margin=0.1,
