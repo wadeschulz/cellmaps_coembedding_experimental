@@ -2,6 +2,14 @@
 History
 =======
 
+1.1.0 (2025-03-05)
+-------------------
+
+* Added functionality to evaluate embeddings using statistical analysis and visualization (functions
+`get_embedding_eval_data` and `generate_embedding_evaluation_figures` in cellmaps_coembedding.utils).
+
+* Update defauls (EPOCHS and DROPOUT)
+
 1.0.0 (2025-01-28)
 -------------------
 
