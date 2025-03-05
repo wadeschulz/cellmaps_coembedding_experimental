@@ -41,6 +41,14 @@ cellmaps\_coembedding.runner module
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_coembedding.utils module
+-----------------------------------
+
+.. automodule:: cellmaps_coembedding.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

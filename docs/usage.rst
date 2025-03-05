@@ -109,3 +109,40 @@ Via Docker
 
    Coming soon...
 
+Embedding Evaluation (additional functionality)
+------------------------------------------------
+
+The `cellmaps_coembedding.utils` module provides functions for evaluating embeddings. It is not part of the standard workflow,
+but an additional functionality. It includes statistical analysis of similarity scores and
+visualization of embedding performance using enrichment tests.
+
+
+
+The `get_embedding_eval_data` function computes enrichment effect sizes for various embeddings using a reference
+adjacency matrix (CORUM). It also saves KDE data for the MUSE embedding. The `generate_embedding_evaluation_figures`
+automates the evaluation process by loading embeddings, computing effect sizes, and generating figures.
+
+**Returns:**
+
+- `sim_muse_data.csv`: MUSE similarity scores.
+
+- `embedding_eval.csv`: Enrichment effect sizes for each embedding.
+
+- `sim_muse.png`: KDE plot for similarity scores.
+
+- `embedding_eval.png`: Enrichment comparison plot.
+
+**Usage Example**
+
+.. code-block::
+
+    from cellmaps_coembedding.utils import generate_embedding_evaluation_figures
+
+    generate_embedding_evaluation_figures(
+        coembedding='/path/to/coembedding',
+        ppi='/path/to/ppiembedding',
+        image='/path/to/imageembedding',
+        outdir='/output/directory',
+        num_samplings=1000,
+        num_edges=1000
+    )
