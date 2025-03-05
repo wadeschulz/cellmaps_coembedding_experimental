@@ -6,7 +6,7 @@ History
 -------------------
 
 * Added functionality to evaluate embeddings using statistical analysis and visualization (functions
-`get_embedding_eval_data` and `generate_embedding_evaluation_figures` in cellmaps_coembedding.utils).
+  `get_embedding_eval_data` and `generate_embedding_evaluation_figures` in cellmaps_coembedding.utils).
 
 * Update defauls (EPOCHS and DROPOUT)
 
