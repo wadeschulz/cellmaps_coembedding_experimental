@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from cellmaps_coembedding.muse_sc.df_utils import *
 import numpy as np
+import seaborn as sns
+import umap
 
 
 def plot_kde_from_df(df, outdir, kde_figure='sim_muse.png'):
@@ -232,3 +234,57 @@ def generate_embedding_evaluation_figures(coembedding, ppi=None, image=None, out
 
     embedding_eval_df = pd.read_csv(eval_file)
     plot_embedding_eval(embedding_eval_df, outdir)
+
+
+def generate_umap_of_embedding(emb_file, outdir, label_map=None):
+    # Load the embedding
+    emb = pd.read_csv(emb_file, sep='\t', index_col=0)
+
+    # Run UMAP
+    mapper = umap.UMAP(random_state=42).fit_transform(emb.values)
+
+    # Create a DataFrame with UMAP coordinates
+    emb_mapper_annot = pd.DataFrame(
+        mapper,
+        index=emb.index,
+        columns=['UMAP1', 'UMAP2']
+    )
+
+    # If label_map is provided, map each index (gene) to its label
+    if label_map is not None:
+        emb_mapper_annot['Label'] = emb_mapper_annot.index.map(label_map.get)
+        # Fill missing labels with 'Other'
+        emb_mapper_annot['Label'].fillna('Other', inplace=True)
+
+        # Plot UMAP colored by label
+        plt.figure(figsize=(5, 5))
+        sns.scatterplot(
+            x='UMAP1',
+            y='UMAP2',
+            data=emb_mapper_annot,
+            hue='Label',
+            s=10,
+            linewidth=0
+        )
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    else:
+        # Plot UMAP without coloring by label
+        plt.figure(figsize=(5, 5))
+        sns.scatterplot(
+            x='UMAP1',
+            y='UMAP2',
+            data=emb_mapper_annot,
+            s=10,
+            linewidth=0
+        )
+
+    sns.despine()
+    plt.xticks([], [])
+    plt.yticks([], [])
+    plt.xlabel('UMAP1')
+    plt.ylabel('UMAP2')
+
+    # Save figure
+    figure_save_path = os.path.join(outdir, 'embedding_umap.svg')
+    plt.savefig(figure_save_path, dpi=300, bbox_inches='tight')
+    plt.close()
