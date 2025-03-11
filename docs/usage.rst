@@ -116,8 +116,6 @@ The `cellmaps_coembedding.utils` module provides functions for evaluating embedd
 but an additional functionality. It includes statistical analysis of similarity scores and
 visualization of embedding performance using enrichment tests.
 
-
-
 The `get_embedding_eval_data` function computes enrichment effect sizes for various embeddings using a reference
 adjacency matrix (CORUM). It also saves KDE data for the MUSE embedding. The `generate_embedding_evaluation_figures`
 automates the evaluation process by loading embeddings, computing effect sizes, and generating figures.
@@ -146,3 +144,30 @@ automates the evaluation process by loading embeddings, computing effect sizes, 
         num_samplings=1000,
         num_edges=1000
     )
+
+
+**UMAP Generation**
+
+Optionally, you can create UMAP visualizations of the generated embeddings by using the ``cellmaps_coembedding.utils``
+helpers. These plots allow you to see how samples cluster in a 2D projection based on their embedding similarity.
+
+.. note::
+   To generate UMAP plots, you need to have the ``umap-learn`` (often installed as ``umap`` or ``umap-learn``) and ``seaborn`` Python packages installed. For example, you can install them via::
+
+     pip install umap-learn seaborn
+
+
+.. code-block::
+
+    from cellmaps_coembedding.utils import generate_umap_of_embedding
+
+    generate_umap_of_embedding(emb_file='/path/to/embedding', outdir='/output/directory')
+
+If you want to color the UMAP based on label (for example localization of the protein in the cell), you can pass a
+directory that contains label to protein mapping in ``label_map`` argument.
+
+.. code-block::
+
+    from cellmaps_coembedding.utils import generate_umap_of_embedding
+
+    generate_umap_of_embedding(emb_file='/path/to/embedding', outdir='/output/directory', label_map=location_dict)
