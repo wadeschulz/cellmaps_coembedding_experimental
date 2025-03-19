@@ -2,6 +2,11 @@
 History
 =======
 
+1.2.0 (2025-03-19)
+-------------------
+
+* Added functionality to generate umap of embeddings (in cellmaps_coembedding.utils)
+
 1.1.0 (2025-03-05)
 -------------------
 
