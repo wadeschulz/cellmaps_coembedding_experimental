@@ -35,6 +35,7 @@ Dependencies
 * `matplotlib <https://pypi.org/project/matplotlib>`__
 * `dill <https://pypi.org/project/dill>`__
 * `tqdm <https://pypi.org/project/tqdm>`__
+* `scipy <https://pypi.org/project/scipy/>`__
 
 
 Compatibility
