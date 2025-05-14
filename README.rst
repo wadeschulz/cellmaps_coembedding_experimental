@@ -50,6 +50,7 @@ Installation
 
    git clone https://github.com/idekerlab/cellmaps_coembedding
    cd cellmaps_coembedding
+   pip install -r requirements_dev.txt
    make dist
    pip install dist/cellmaps_coembedding*whl
 
@@ -81,7 +82,7 @@ Output:
    dockerbuild          build docker image and store in local repository
    dockerpush           push image to dockerhub
 
-Before running tests, please install ``pip install -r requirements_dev``.
+Before running tests, please install ``pip install -r requirements_dev.txt``.
 
 For developers
 -------------------------------------------
