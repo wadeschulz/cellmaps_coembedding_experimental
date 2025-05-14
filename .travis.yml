@@ -7,16 +7,16 @@ python:
   - "3.10"
   - "3.9"
   - "3.8"
-#  - "3.6"
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
     - pip install -r requirements.txt
     - pip install coveralls
+    - pip install pytest
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run --source cellmaps_coembedding -m unittest discover
+    - coverage run --source cellmaps_coembedding -m pytest
 
 after_success: coveralls
 
