@@ -70,7 +70,7 @@ class Testuniembednn(unittest.TestCase):
         test_input = {'test_modality': torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])}
         latents, outputs = self.model.forward(test_input)
         self.assertIn('test_modality', latents)
-        self.assertIn('test_modality,test_modality', outputs)
+        self.assertIn('test_modality___test_modality', outputs)
 
 
 class TestProteinGPS(unittest.TestCase):
@@ -118,7 +118,7 @@ class TestProteinGPS(unittest.TestCase):
             self.assertIsInstance(embeddings, dict)
 
             expected_files = ([f"{result_dir}_suffix_{mod}_latent.tsv" for mod in modality_names] +
-                              [f"{result_dir}_suffix_{mod},{mod}_reconstructed.tsv" for mod in modality_names])
+                              [f"{result_dir}_suffix_{mod}___{mod}_reconstructed.tsv" for mod in modality_names])
 
             for file_path in expected_files:
                 self.assertTrue(os.path.exists(file_path), f"File {file_path} does not exist.")
