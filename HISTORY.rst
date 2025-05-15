@@ -2,10 +2,11 @@
 History
 =======
 
-1.2.2 (2025-XX-XX)
+1.2.2 (2025-05-15)
 -------------------
 
 * Updated to PEP 517 compliant build system
+* Bug fixes: update constants, add back L2 normalization and fix separator issue for proteinGPS
 
 1.2.1 (2025-04-14)
 -------------------
