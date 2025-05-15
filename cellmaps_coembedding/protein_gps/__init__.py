@@ -5,8 +5,8 @@ import collections
 import torch.nn.functional as F
 import csv
 import random
-import itertools
 
+MODALITY_SEP = '___'
 
 def write_embedding_dictionary_to_file(filepath, dictionary, dims):
     """
@@ -56,7 +56,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     for input_modality in data_wrapper.modalities_dict.keys():
         all_latents[input_modality] = dict()
         for output_modality in data_wrapper.modalities_dict.keys():
-            output_key = input_modality + ',' + output_modality
+            output_key = input_modality + MODALITY_SEP + output_modality
             all_outputs[output_key] = dict()
 
     embeddings_by_protein = dict()
@@ -72,10 +72,9 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
                     all_latents[modality][protein_name] = protein_embedding
                     embeddings_by_protein[protein_name][modality] = protein_embedding
             for modality, output in outputs.items():
-                input_modality = modality.split(',')[0]
-                output_modality = modality.split(',')[1]
-                if (mask[
-                    input_modality] > 0):  # just need input modality to be there... #& (mask[output_modality] > 0):
+                input_modality = modality.split(MODALITY_SEP)[0]
+                output_modality = modality.split(MODALITY_SEP)[1]
+                if mask[input_modality] > 0:  # just need input modality to be there #& (mask[output_modality] > 0):
                     all_outputs[modality][protein_name] = output.detach().cpu().numpy()
 
     # save latent embeddings
@@ -90,7 +89,7 @@ def save_results(model, protein_dataset, data_wrapper, results_suffix=''):
     # save reconstructed embeddings
     for modality, outputs in all_outputs.items():
         filepath = '{}_{}_reconstructed.tsv'.format(resultsdir, modality)
-        output_modality = modality.split(',')[1]
+        output_modality = modality.split(MODALITY_SEP)[1]
         output_modality_dim = data_wrapper.modalities_dict[output_modality].input_dim
         write_embedding_dictionary_to_file(filepath, outputs, output_modality_dim)
 
@@ -102,9 +101,10 @@ def fit_predict(resultsdir, modality_data,
                 batch_size=16,
                 latent_dim=128,
                 n_epochs=250,
-                triplet_margin=0.2,
-                lambda_reconstruction=5.0,
-                lambda_triplet=5.0,
+                triplet_margin=1.0,
+                lambda_reconstruction=1.0,
+                lambda_triplet=1.0,
+                lambda_l2=0.001,
                 l2_norm=False,
                 dropout=0,
                 save_epoch=50,
@@ -135,6 +135,8 @@ def fit_predict(resultsdir, modality_data,
     :type lambda_reconstruction: float
     :param lambda_triplet: Weight for triplet loss.
     :type lambda_triplet: float
+    :param lambda_l2: Weight for L2 regularization.
+    :type lambda_l2: float
     :param l2_norm: Whether to use L2 normalization.
     :type l2_norm: bool
     :param dropout: Dropout rate.
@@ -158,6 +160,7 @@ def fit_predict(resultsdir, modality_data,
     :rtype: generator
     """
     source_file = open('{}.txt'.format(resultsdir), 'w')
+
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
@@ -185,6 +188,7 @@ def fit_predict(resultsdir, modality_data,
         total_loss = []
         total_reconstruction_loss = []
         total_triplet_loss = []
+        total_l2_loss = []
         total_reconstruction_loss_by_modality = collections.defaultdict(list)  # key: inputmodality_outputmodality
         total_triplet_loss_by_modality = collections.defaultdict(list)  # key: modality
 
@@ -198,10 +202,15 @@ def fit_predict(resultsdir, modality_data,
 
             batch_reconstruction_losses = torch.tensor([]).to(device)
             batch_triplet_losses = torch.tensor([]).to(device)
+            batch_l2_losses = torch.tensor([]).to(device)
 
             for input_modality in batch_data.keys():
 
-                # get reconstruction loss
+                # get l2 loss
+                l2_loss = torch.norm(latents[input_modality], p=2, dim=1)
+                batch_l2_losses = torch.cat((batch_l2_losses, l2_loss))
+
+                # get reconstruction losses
                 for output_modality in batch_data.keys():
 
                     # protein_present in both modalities mask
@@ -209,7 +218,7 @@ def fit_predict(resultsdir, modality_data,
                     if torch.sum(mask) == 0:
                         continue  # no overlap
 
-                    output_key = input_modality + ',' + output_modality
+                    output_key = input_modality + MODALITY_SEP + output_modality
 
                     # compare OUTPUT modality original embedding to output embedding
                     pairwise_dist_input_output = 1 - F.cosine_similarity(batch_data[output_modality],
@@ -219,7 +228,6 @@ def fit_predict(resultsdir, modality_data,
                     total_reconstruction_loss_by_modality[output_key].append(
                         torch.mean(reconstruction_loss).detach().cpu().numpy())
 
-            # get triplet losses
             for anchor_modality in batch_data.keys():
                 posneg_modality = random.choice(list([x for x in batch_data.keys() if x != anchor_modality]))
 
@@ -260,22 +268,23 @@ def fit_predict(resultsdir, modality_data,
                 triplet_loss = triplet_loss[mask]
 
                 batch_triplet_losses = torch.cat((batch_triplet_losses, triplet_loss))
-                total_triplet_loss_by_modality[anchor_modality + ',' +
+                total_triplet_loss_by_modality[anchor_modality + MODALITY_SEP +
                                                posneg_modality].append(torch.mean(triplet_loss).detach().cpu().numpy())
 
             if (len(batch_reconstruction_losses) == 0) | (len(batch_triplet_losses) == 0):
                 continue  # didn't have any overlapping proteins in any modalities
 
-            # calc losses
             if mean_losses:
                 reconstruction_loss = torch.mean(batch_reconstruction_losses)
                 triplet_loss = torch.mean(batch_triplet_losses)
+                l2_loss = torch.mean(batch_l2_losses)
 
             else:
                 reconstruction_loss = torch.sum(batch_reconstruction_losses)
                 triplet_loss = torch.sum(batch_triplet_losses)
+                l2_loss = torch.sum(batch_l2_losses)
 
-            batch_total = lambda_reconstruction * reconstruction_loss + lambda_triplet * triplet_loss
+            batch_total = lambda_reconstruction * reconstruction_loss + lambda_triplet * triplet_loss + lambda_l2 * l2_loss
 
             AE_optimizer.zero_grad()
             batch_total.backward()
@@ -284,13 +293,14 @@ def fit_predict(resultsdir, modality_data,
             total_loss.append(batch_total.detach().cpu().numpy())
             total_reconstruction_loss.append(reconstruction_loss.detach().cpu().numpy())
             total_triplet_loss.append(triplet_loss.detach().cpu().numpy())
+            total_l2_loss.append(l2_loss.detach().cpu().numpy())
 
         # get result string wtith losses
-        result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\t' % (
+        result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (
             epoch,
             np.mean(total_loss),
             np.mean(total_reconstruction_loss),
-            np.mean(total_triplet_loss))
+            np.mean(total_triplet_loss), np.mean(total_l2_loss))
         for modality, loss in total_reconstruction_loss_by_modality.items():
             result_string += '%s_reconstruction_loss:%03.5f\t' % (modality, np.mean(loss))
         for modality, loss in total_triplet_loss_by_modality.items():
@@ -305,7 +315,7 @@ def fit_predict(resultsdir, modality_data,
     embeddings_by_protein = save_results(AE_model, protein_dataset, data_wrapper)
     source_file.close()
 
-    #    average embeddings for each protein and return as coemembedding
+    # average embeddings for each protein and return as coemembedding
     for protein, embeddings in embeddings_by_protein.items():
         average_embedding = np.mean(list(embeddings.values()), axis=0)
         row = [protein]

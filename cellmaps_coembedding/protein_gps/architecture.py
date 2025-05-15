@@ -4,6 +4,8 @@ import numpy as np
 import torch.nn as nn
 from torch.utils.data import Dataset
 
+MODALITY_SEP = '___'
+
 
 class ToTensor:
     """
@@ -236,6 +238,6 @@ class uniembed_nn(nn.Module):
 
         for modality_name, modality_values in latents.items():
             for output_name, _ in inputs.items():
-                outputs[modality_name + ',' + output_name] = self.decoders[output_name](modality_values)
+                outputs[modality_name + MODALITY_SEP + output_name] = self.decoders[output_name](modality_values)
 
         return latents, outputs

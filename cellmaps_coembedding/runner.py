@@ -234,7 +234,7 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                  n_epochs=EmbeddingGenerator.N_EPOCHS,
                  save_update_epochs=True,
                  batch_size=16,
-                 triplet_margin=0.2,
+                 triplet_margin=1.0,
                  dropout=EmbeddingGenerator.DROPOUT,
                  l2_norm=False,
                  mean_losses=False
