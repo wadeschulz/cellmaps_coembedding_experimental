@@ -484,20 +484,53 @@ class CellmapsCoEmbedder(object):
 
         :param outdir: Directory to write the results of this tool
         :type outdir: str
-        :param inputdir: Output directory where embeddings to be coembedded are located
-                         (output of cellmaps_image_embedding and cellmaps_ppi_embedding)
-        :type inputdir: str
-        :param embedding_generator:
+        :param inputdirs: Input directories where embeddings to be coembedded are located
+                         (e.g. output of cellmaps_image_embedding and cellmaps_ppi_embedding)
+        :type inputdirs: list[str]
+        :param embedding_generator: An instance of a co-embedding generator class that
+                                    produces combined embeddings. Must implement the method
+                                    `get_next_embedding()`: :py:class:`~ProteinGPSCoEmbeddingGenerator`, :
+                                    py:class:`~MuseCoEmbeddingGenerator`, or :py:class:`~FakeCoEmbeddingGenerator`.
+        :type embedding_generator: EmbeddingGenerator
         :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
         :type skip_logging: bool
-        :param name:
-        :type name: str
-        :param organization_name:
-        :type organization_name: str
-        :param project_name:
-        :type project_name: str
-        :param input_data_dict:
-        :type input_data_dict: dict
+        :param name: Optional display name for the generated co-embedding dataset. If not
+                     provided, the name is inferred from RO-Crate metadata or fallback values.
+        :type name: str or None
+        :param organization_name: Optional name of the organization creating the co-embedding.
+                                  Used in provenance metadata. Inferred if not specified.
+        :type organization_name: str or None
+        :param project_name: Optional name of the project associated with this co-embedding run.
+                             Used for provenance metadata. Inferred if not specified.
+        :type project_name: str or None
+        :param provenance_utils: Utility object for generating and registering RO-Crates,
+                                 datasets, computations, and software metadata. Defaults to a
+                                 new instance of py:class:`~ProvenanceUtil`.
+        :type provenance_utils: py:class:`~ProvenanceUtil`
+        :param input_data_dict: Optional dictionary representing the input configuration.
+
+                                Example:
+
+                                .. code-block:: python
+
+                                    {'outdir': '/path/to/output','inputdirs': ['/path/to/image', '/path/to/ppi']}
+        :type input_data_dict: dict or None
+        :param provenance: Optional dictionary specifying metadata for dataset registration
+                           when RO-Crate metadata is not available in `inputdirs`. This is used
+                           to describe the data context, authorship, and keywords.
+
+                           Example:
+
+                           .. code-block:: python
+
+                               {
+                                   'name': 'Coembedded Dataset',
+                                   'organization-name': 'CM4AI',
+                                   'project-name': 'Gene Atlas',
+                                   'description': 'Merged representation of protein and image embeddings.',
+                                   'keywords': ['coembedding', 'multi-omics']
+                               }
+        :type provenance: dict or None
         """
         if outdir is None:
             raise CellmapsCoEmbeddingError('outdir is None')

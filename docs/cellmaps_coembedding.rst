@@ -12,7 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   cellmaps_coembedding.autoembed_sc
+   cellmaps_coembedding.protein_gps
 
 Submodules
 ----------
