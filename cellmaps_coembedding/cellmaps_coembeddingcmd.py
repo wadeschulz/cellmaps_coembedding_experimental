@@ -65,6 +65,12 @@ def _parse_arguments(desc, args):
                         help='Percentage to use fo dropout layers in neural network')
     parser.add_argument('--l2_norm', action='store_true',
                         help='If set, L2 normalize coembeddings')
+    parser.add_argument('--lambda_reconstruction', type=float, default=1.0,
+                        help='Weight for reconstruction loss (default: 1.0)')
+    parser.add_argument('--lambda_l2', type=float, default=0.001,
+                        help='Weight for L2 regularization (default: 0.001)')
+    parser.add_argument('--lambda_triplet', type=float, default=1.0,
+                        help='Weight for triplet loss (default: 1.0)')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--provenance',
@@ -195,7 +201,10 @@ def main(args):
                                                      outdir=os.path.abspath(theargs.outdir),
                                                      embeddings=theargs.embeddings,
                                                      embedding_names=theargs.embedding_names,
-                                                     mean_losses=theargs.mean_losses)
+                                                     mean_losses=theargs.mean_losses,
+                                                     lambda_reconstruction=theargs.lambda_reconstruction,
+                                                     lambda_l2=theargs.lambda_l2,
+                                                     lambda_triplet=theargs.lambda_triplet)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,

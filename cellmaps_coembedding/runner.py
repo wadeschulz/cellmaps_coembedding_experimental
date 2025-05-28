@@ -237,7 +237,10 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                  triplet_margin=1.0,
                  dropout=EmbeddingGenerator.DROPOUT,
                  l2_norm=False,
-                 mean_losses=False
+                 mean_losses=False,
+                 lambda_reconstruction=1.0,
+                 lambda_l2=0.001,
+                 lambda_triplet=1.0
                  ):
         """
         Initializes the ProteinGPSCoEmbeddingGenerator.
@@ -255,6 +258,10 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
         :param triplet_margin: The margin value for the triplet loss during training (default: 1.0).
         :param dropout: The dropout rate between layers in the neural network (default: 0).
         :param l2_norm: If true, L2 normalize coembeddings
+        :param mean_losses: Whether to average losses or not
+        :param lambda_reconstruction: Weight for reconstruction loss (default: 1.0)
+        :param lambda_l2: Weight for L2 regularization (default: 0.001)
+        :param lambda_triplet: Weight for triplet loss (default: 1.0)
         """
         super().__init__(dimensions=dimensions, embeddings=embeddings,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -270,6 +277,9 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
         self._batch_size = batch_size
         self._jackknife_percent = jackknife_percent
         self._mean_losses = mean_losses
+        self._lambda_reconstruction = lambda_reconstruction
+        self._lambda_l2 = lambda_l2
+        self._lambda_triplet = lambda_triplet
 
     def get_next_embedding(self):
         """
@@ -302,7 +312,10 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                                                 save_update_epochs=self._save_update_epochs,
                                                 dropout=self._dropout,
                                                 l2_norm=self._l2_norm,
-                                                mean_losses=self._mean_losses):
+                                                mean_losses=self._mean_losses,
+                                                lambda_reconstruction=self._lambda_reconstruction,
+                                                lambda_l2=self._lambda_l2,
+                                                lambda_triplet=self._lambda_triplet):
             yield embedding
 
 
@@ -416,10 +429,10 @@ class AutoCoEmbeddingGenerator(ProteinGPSCoEmbeddingGenerator):
                  ppi_embeddingdir=None, image_embeddingdir=None, embedding_names=None,
                  jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT, n_epochs=EmbeddingGenerator.N_EPOCHS,
                  save_update_epochs=True, batch_size=16, triplet_margin=0.2, dropout=EmbeddingGenerator.DROPOUT,
-                 l2_norm=False, mean_losses=False):
+                 l2_norm=False, mean_losses=False, lambda_reconstruction=1.0, lambda_l2=0.001, lambda_triplet=1.0):
         super().__init__(dimensions, outdir, embeddings, ppi_embeddingdir, image_embeddingdir, embedding_names,
                          jackknife_percent, n_epochs, save_update_epochs, batch_size, triplet_margin, dropout, l2_norm,
-                         mean_losses)
+                         mean_losses, lambda_reconstruction, lambda_l2, lambda_triplet)
 
 
 class FakeCoEmbeddingGenerator(EmbeddingGenerator):
