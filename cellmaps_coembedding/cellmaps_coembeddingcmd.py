@@ -71,6 +71,20 @@ def _parse_arguments(desc, args):
                         help='Weight for triplet loss (for proteingps algorithm) (default: 1.0)')
     parser.add_argument('--mean_losses', action='store_true',
                         help='If set, use mean of losses otherwise sum (for proteingps algorithm)')
+    parser.add_argument('--batch_size', type=int, default=16,
+                        help='Batch size for training (for proteingps algorithm) (default: 16)')
+    parser.add_argument('--triplet_margin', type=float, default=1.0,
+                        help='Margin for triplet loss (for proteingps algorithm) (default: 1.0)')
+    parser.add_argument('--learn_rate', type=float, default=1e-4,
+                        help='Learning rate for optimizer (for proteingps algorithm) (default: 1e-4)')
+    parser.add_argument('--hidden_size_1', type=int, default=512,
+                        help='Size of first hidden layer (for proteingps algorithm) (default: 512)')
+    parser.add_argument('--hidden_size_2', type=int, default=256,
+                        help='Size of second hidden layer (for proteingps algorithm) (default: 256)')
+    parser.add_argument('--save_update_epochs', action='store_true',
+                        help='If set, save model state at specified epoch intervals (for proteingps algorithm)')
+    parser.add_argument('--negative_from_batch', action='store_true',
+                        help='If set, use negative samples from same batch for triplet loss (for proteingps algorithm)')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--provenance',
@@ -204,7 +218,14 @@ def main(args):
                                                      mean_losses=theargs.mean_losses,
                                                      lambda_reconstruction=theargs.lambda_reconstruction,
                                                      lambda_l2=theargs.lambda_l2,
-                                                     lambda_triplet=theargs.lambda_triplet)
+                                                     lambda_triplet=theargs.lambda_triplet,
+                                                     batch_size=theargs.batch_size,
+                                                     triplet_margin=theargs.triplet_margin,
+                                                     learn_rate=theargs.learn_rate,
+                                                     hidden_size_1=theargs.hidden_size_1,
+                                                     hidden_size_2=theargs.hidden_size_2,
+                                                     save_update_epochs=theargs.save_update_epochs,
+                                                     negative_from_batch=theargs.negative_from_batch)
 
         inputdirs = gen.get_embedding_inputdirs()
         return CellmapsCoEmbedder(outdir=theargs.outdir,

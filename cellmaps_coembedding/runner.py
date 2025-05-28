@@ -240,7 +240,11 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                  mean_losses=False,
                  lambda_reconstruction=1.0,
                  lambda_l2=0.001,
-                 lambda_triplet=1.0
+                 lambda_triplet=1.0,
+                 learn_rate=1e-4,
+                 hidden_size_1=512,
+                 hidden_size_2=256,
+                 negative_from_batch=False
                  ):
         """
         Initializes the ProteinGPSCoEmbeddingGenerator.
@@ -262,6 +266,10 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
         :param lambda_reconstruction: Weight for reconstruction loss (default: 1.0)
         :param lambda_l2: Weight for L2 regularization (default: 0.001)
         :param lambda_triplet: Weight for triplet loss (default: 1.0)
+        :param learn_rate: Learning rate for optimizer (default: 1e-4)
+        :param hidden_size_1: Size of first hidden layer (default: 512)
+        :param hidden_size_2: Size of second hidden layer (default: 256)
+        :param negative_from_batch: Whether to use negative samples from same batch (default: False)
         """
         super().__init__(dimensions=dimensions, embeddings=embeddings,
                          ppi_embeddingdir=ppi_embeddingdir,
@@ -280,6 +288,10 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
         self._lambda_reconstruction = lambda_reconstruction
         self._lambda_l2 = lambda_l2
         self._lambda_triplet = lambda_triplet
+        self._learn_rate = learn_rate
+        self._hidden_size_1 = hidden_size_1
+        self._hidden_size_2 = hidden_size_2
+        self._negative_from_batch = negative_from_batch
 
     def get_next_embedding(self):
         """
@@ -315,7 +327,11 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                                                 mean_losses=self._mean_losses,
                                                 lambda_reconstruction=self._lambda_reconstruction,
                                                 lambda_l2=self._lambda_l2,
-                                                lambda_triplet=self._lambda_triplet):
+                                                lambda_triplet=self._lambda_triplet,
+                                                learn_rate=self._learn_rate,
+                                                hidden_size_1=self._hidden_size_1,
+                                                hidden_size_2=self._hidden_size_2,
+                                                negative_from_batch=self._negative_from_batch):
             yield embedding
 
 
