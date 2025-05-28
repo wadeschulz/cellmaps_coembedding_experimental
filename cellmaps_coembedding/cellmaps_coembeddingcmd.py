@@ -53,24 +53,24 @@ def _parse_arguments(desc, args):
     parser.add_argument('--latent_dimension', type=int, default=EmbeddingGenerator.LATENT_DIMENSIONS,
                         help='Output dimension of embedding')
     parser.add_argument('--n_epochs_init', default=MuseCoEmbeddingGenerator.N_EPOCHS_INIT, type=int,
-                        help='# of init training epochs')
+                        help='# of init training epochs (for muse algorithm)')
     parser.add_argument('--n_epochs', default=EmbeddingGenerator.N_EPOCHS, type=int,
                         help='# of training epochs')
     parser.add_argument('--jackknife_percent', default=EmbeddingGenerator.JACKKNIFE_PERCENT, type=float,
                         help='Percentage of data to withhold from training'
                              'a value of 0.1 means to withhold 10 percent of the data')
-    parser.add_argument('--mean_losses', action='store_true',
-                        help='If set, use mean of losses otherwise sum')
     parser.add_argument('--dropout', default=EmbeddingGenerator.DROPOUT, type=float,
                         help='Percentage to use fo dropout layers in neural network')
     parser.add_argument('--l2_norm', action='store_true',
-                        help='If set, L2 normalize coembeddings')
+                        help='If set, L2 normalize coembeddings (for proteingps algorithm)')
     parser.add_argument('--lambda_reconstruction', type=float, default=1.0,
-                        help='Weight for reconstruction loss (default: 1.0)')
+                        help='Weight for reconstruction loss (for proteingps algorithm) (default: 1.0)')
     parser.add_argument('--lambda_l2', type=float, default=0.001,
-                        help='Weight for L2 regularization (default: 0.001)')
+                        help='Weight for L2 regularization (for proteingps algorithm) (default: 0.001)')
     parser.add_argument('--lambda_triplet', type=float, default=1.0,
-                        help='Weight for triplet loss (default: 1.0)')
+                        help='Weight for triplet loss (for proteingps algorithm) (default: 1.0)')
+    parser.add_argument('--mean_losses', action='store_true',
+                        help='If set, use mean of losses otherwise sum (for proteingps algorithm)')
     parser.add_argument('--fake_embedding', action='store_true',
                         help='If set, generate fake coembeddings')
     parser.add_argument('--provenance',
