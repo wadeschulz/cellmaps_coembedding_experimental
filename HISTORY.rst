@@ -2,6 +2,11 @@
 History
 =======
 
+1.3.0 (2025-05-29)
+-------------------
+
+* Create flags for parameters of proteingps coembedding algorithm
+
 1.2.2 (2025-05-15)
 -------------------
 
