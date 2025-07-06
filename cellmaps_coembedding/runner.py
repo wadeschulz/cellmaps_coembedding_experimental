@@ -351,6 +351,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                  image_embeddingdir=None,
                  embedding_names=None,
                  jackknife_percent=EmbeddingGenerator.JACKKNIFE_PERCENT,
+                 log_fairops=False
                  ):
         """
 
@@ -377,6 +378,7 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
         self._n_epochs = n_epochs
         self._n_epochs_init = n_epochs_init
         self._jackknife_percent = jackknife_percent
+        self._log_fairops = log_fairops
 
     def get_next_embedding(self):
         """
@@ -426,7 +428,8 @@ class MuseCoEmbeddingGenerator(EmbeddingGenerator):
                                                      n_epochs=self._n_epochs,
                                                      n_epochs_init=self._n_epochs_init,
                                                      triplet_margin=self.triplet_margin,
-                                                     k=self._k, dropout=self._dropout)
+                                                     k=self._k, dropout=self._dropout,
+                                                     log_fairops=self._log_fairops)
         for index, embedding in enumerate(res_embedings):
             row = [name_index[index]]
             row.extend(embedding)

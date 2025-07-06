@@ -18,6 +18,7 @@ lambda_regul = 5
 hard_loss = False
 triplet_margin = 0.1
 device = torch.device('cpu')
+cur_muse_step = 0
 
 
 def make_matrix_from_labels(labels):
@@ -63,7 +64,7 @@ def write_result_to_file(filepath, data, indexes):
             writer.writerow(row)
 
 
-def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super, train_name, train, device):
+def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super, train_name, train, device, log_fairops):
     """
     Trains a model using a DataLoader, tracking and computing various losses.
 
@@ -102,6 +103,10 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
     fraction_semi_ys = []
     fraction_easy_xs = []
     fraction_easy_ys = []
+
+    if log_fairops:
+        global cur_muse_step
+        import mlflow
 
     model.train()
 
@@ -172,7 +177,26 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
            np.mean(L_trip_batch_all_ys), np.mean(fraction_hard_xs), np.mean(fraction_hard_ys),
            np.mean(fraction_semi_xs), np.mean(fraction_semi_ys), np.mean(fraction_easy_xs), np.mean(fraction_easy_ys)),
         file=source_file)
-
+    
+    if log_fairops:
+        mlflow.log_metrics({
+            f"{train_name}_epoch": epoch,
+            "total_loss": np.mean(L_totals),
+            "reconstruction_loss": np.mean(L_reconstruction_xs),
+            "reconstruction_loss_y": np.mean(L_reconstruction_ys),
+            "sparse_penalty": np.mean(L_weights),
+            "x_triplet_loss_batch_hard": np.mean(L_trip_batch_hard_xs),
+            "y_triplet_loss_batch_hard": np.mean(L_trip_batch_hard_ys),
+            "x_triplet_loss_batch_all": np.mean(L_trip_batch_all_xs),
+            "y_triplet_loss_batch_all": np.mean(L_trip_batch_all_ys),
+            "x_fraction_hard": np.mean(fraction_hard_xs),
+            "y_fraction_hard": np.mean(fraction_hard_ys),
+            "x_fraction_semi": np.mean(fraction_semi_xs),
+            "y_fraction_semi": np.mean(fraction_semi_ys),
+            "x_fraction_easy": np.mean(fraction_easy_xs),
+            "y_fraction_easy": np.mean(fraction_easy_ys)
+        }, step=cur_muse_step)
+    cur_muse_step += 1
 
 def muse_fit_predict(resultsdir,
                      modality_data=[],
@@ -186,8 +210,14 @@ def muse_fit_predict(resultsdir,
                      n_epochs=500,
                      n_epochs_init=200,
                      lambda_regul=5,
-                     lambda_super=5, triplet_margin=0.1, hard_loss=False, l2_norm=True, k=10, dropout=0.25,
-                     save_update_epochs=False):
+                     lambda_super=5,
+                     triplet_margin=0.1,
+                     hard_loss=False,
+                     l2_norm=True,
+                     k=10,
+                     dropout=0.25,
+                     save_update_epochs=False,
+                     log_fairops=False):
     """
     Fits a model using provided datasets and predicts outputs.
 
@@ -232,6 +262,9 @@ def muse_fit_predict(resultsdir,
     :return: Model and embeddings as final outputs.
     :rtype: tuple
     """
+    if log_fairops:
+        import mlflow
+
     # get data
     data_x = modality_data[0]
     data_y = modality_data[1]
@@ -248,6 +281,26 @@ def muse_fit_predict(resultsdir,
     cluster_update_epoch = 50
     source_file = open('{}.txt'.format(resultsdir), 'w')
 
+    if log_fairops:
+        mlflow.log_params({
+            "batch_size": batch_size,
+            "latent_dim": latent_dim,
+            "n_epochs": n_epochs,
+            "n_epochs_init": n_epochs_init,
+            "lambda_regul": lambda_regul,
+            "lambda_super": lambda_super,
+            "triplet_margin": triplet_margin,
+            "hard_loss": hard_loss,
+            "l2_norm": l2_norm,
+            "k": k,
+            "dropout": dropout,
+            "n_hidden": n_hidden,
+            "learn_rate": learn_rate,
+            "batch_size": batch_size,
+            "cluster_update_epoch": cluster_update_epoch,
+            "save_update_epochs": save_update_epochs
+        })
+
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
@@ -259,6 +312,7 @@ def muse_fit_predict(resultsdir,
     globals()['triplet_margin'] = triplet_margin
     globals()['hard_loss'] = hard_loss
     globals()['device'] = device
+    global cur_muse_step
 
     # read data-specific parameters from inputs
     feature_dim_x = data_x.shape[1]
@@ -287,7 +341,9 @@ def muse_fit_predict(resultsdir,
     # create initial cluster labels if non input - only on training data
     create_label_x = False
     if len(label_x) == 0:
-        label_x, _, _ = phenograph.cluster(train_data_x.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        label_x, _, mod_metric = phenograph.cluster(train_data_x.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        if log_fairops:
+            mlflow.log_metric("x_mod_metric", mod_metric, step=cur_muse_step)
         label_x = transform(make_matrix_from_labels(label_x)).to(device)
         create_label_x = True
     else:
@@ -298,7 +354,9 @@ def muse_fit_predict(resultsdir,
 
     create_label_y = False
     if len(label_y) == 0:
-        label_y, _, _ = phenograph.cluster(train_data_y.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        label_y, _, mod_metric = phenograph.cluster(train_data_y.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        if log_fairops:
+            mlflow.log_metric("y_mod_metric", mod_metric, step=cur_muse_step)
         label_y = transform(make_matrix_from_labels(label_y)).to(device)
         create_label_y = True
     else:
@@ -315,29 +373,33 @@ def muse_fit_predict(resultsdir,
     # INIT WITH JUST RECONSTRUCTION
     for epoch in range(n_epochs_init):
         model.train()
-        train_model(model, optimizer, train_loader, label_x, label_y, epoch, 0, 'init_recon', True, device)
+        train_model(model, optimizer, train_loader, label_x, label_y, epoch, 0, 'init_recon', True, device, log_fairops)
 
     #  INIT WITH TRIPLET LOSS AND RECONSTRUCTION, ORIGINAL LABELS
     for epoch in range(n_epochs_init):
         model.train()
-        train_model(model, optimizer, train_loader, label_x, label_y, epoch, lambda_super, 'init_both', True, device)
+        train_model(model, optimizer, train_loader, label_x, label_y, epoch, lambda_super, 'init_both', True, device, log_fairops)
 
     latent, reconstruct_x, reconstruct_y, latent_x, latent_y = model(train_data_x, train_data_y)
 
     update_label_x = label_x
     update_label_y = label_y
     if create_label_x:
-        update_label_x, _, _ = phenograph.cluster(latent_x.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        update_label_x, _, mod_metric = phenograph.cluster(latent_x.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        if log_fairops:
+            mlflow.log_metric("x_mod_metric", mod_metric, step=cur_muse_step)
         update_label_x = transform(make_matrix_from_labels(update_label_x)).to(device)
     if create_label_y:
-        update_label_y, _, _ = phenograph.cluster(latent_y.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        update_label_y, _, mod_metric = phenograph.cluster(latent_y.detach().cpu().numpy(), k=k, primary_metric='cosine')
+        if log_fairops:
+            mlflow.log_metric("y_mod_metric", mod_metric, step=cur_muse_step)
         update_label_y = transform(make_matrix_from_labels(update_label_y)).to(device)
 
     # TRAIN WITH LABELS
     for epoch in range(n_epochs):
         model.train()
         train_model(model, optimizer, train_loader, update_label_x, update_label_y, epoch, lambda_super, 'train', True,
-                    device)
+                    device, log_fairops)
 
         if epoch % cluster_update_epoch == 0:
             model.eval()
@@ -360,13 +422,17 @@ def muse_fit_predict(resultsdir,
             # update clusters (only on training data)
             if create_label_x:
                 train_latent_x = latent_x[train_subset]
-                update_label_x, _, _ = phenograph.cluster(train_latent_x.detach().cpu().numpy(), k=k,
+                update_label_x, _, mod_metric = phenograph.cluster(train_latent_x.detach().cpu().numpy(), k=k,
                                                           primary_metric='cosine')
+                if log_fairops:
+                    mlflow.log_metric("x_mod_metric", mod_metric, step=cur_muse_step)
                 update_label_x = transform(make_matrix_from_labels(update_label_x)).to(device)
             if create_label_y:
                 train_latent_y = latent_y[train_subset]
-                update_label_y, _, _ = phenograph.cluster(train_latent_y.detach().cpu().numpy(), k=k,
+                update_label_y, _, mod_metric = phenograph.cluster(train_latent_y.detach().cpu().numpy(), k=k,
                                                           primary_metric='cosine')
+                if log_fairops:
+                    mlflow.log_metric("y_mod_metric", mod_metric, step=cur_muse_step)
                 update_label_y = transform(make_matrix_from_labels(update_label_y)).to(device)
 
     # SAVE FINAL RESULTS
