@@ -244,7 +244,8 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                  learn_rate=1e-4,
                  hidden_size_1=512,
                  hidden_size_2=256,
-                 negative_from_batch=False
+                 negative_from_batch=False,
+                 log_fairops=False
                  ):
         """
         Initializes the ProteinGPSCoEmbeddingGenerator.
@@ -292,6 +293,7 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
         self._hidden_size_1 = hidden_size_1
         self._hidden_size_2 = hidden_size_2
         self._negative_from_batch = negative_from_batch
+        self._log_fairops = log_fairops
 
     def get_next_embedding(self):
         """
@@ -331,7 +333,8 @@ class ProteinGPSCoEmbeddingGenerator(EmbeddingGenerator):
                                                 learn_rate=self._learn_rate,
                                                 hidden_size_1=self._hidden_size_1,
                                                 hidden_size_2=self._hidden_size_2,
-                                                negative_from_batch=self._negative_from_batch):
+                                                negative_from_batch=self._negative_from_batch,
+                                                log_fairops=self._log_fairops):
             yield embedding
 
 

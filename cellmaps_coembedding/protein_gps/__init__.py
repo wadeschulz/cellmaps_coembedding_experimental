@@ -113,7 +113,8 @@ def fit_predict(resultsdir, modality_data,
                 hidden_size_2=256,
                 save_update_epochs=False,
                 mean_losses=False,
-                negative_from_batch=False):
+                negative_from_batch=False,
+                log_fairops=False):
     """
     Trains and predicts using a deep learning model with the given configuration and data.
 
@@ -159,6 +160,27 @@ def fit_predict(resultsdir, modality_data,
     :returns: Generator of average embeddings for each protein.
     :rtype: generator
     """
+    if log_fairops:
+        import mlflow
+        mlflow.log_params({
+            "batch_size": batch_size,
+            "latent_dim": latent_dim,
+            "n_epochs": n_epochs,
+            "triplet_margin": triplet_margin,
+            "lambda_reconstruction": lambda_reconstruction,
+            "lambda_triplet": lambda_triplet,
+            "lambda_l2": lambda_l2,
+            "l2_norm": l2_norm,
+            "dropout": dropout,
+            "save_epoch": save_epoch,
+            "learn_rate": learn_rate,
+            "hidden_size_1": hidden_size_1,
+            "hidden_size_2": hidden_size_2,
+            "save_update_epochs": save_update_epochs,
+            "mean_losses": mean_losses,
+            "negative_from_batch": negative_from_batch
+        })
+
     source_file = open('{}.txt'.format(resultsdir), 'w')
 
     # get device
@@ -296,6 +318,12 @@ def fit_predict(resultsdir, modality_data,
             total_l2_loss.append(l2_loss.detach().cpu().numpy())
 
         # get result string wtith losses
+        cur_metrics = {
+            "total_loss": np.mean(total_loss),
+            "total_reconstruction_loss": np.mean(total_reconstruction_loss),
+            "total_triplet_loss": np.mean(total_triplet_loss),
+            "total_l2_loss": np.mean(total_l2_loss)
+        }
         result_string = 'epoch:%d\ttotal_loss:%03.5f\treconstruction_loss:%03.5f\ttriplet_loss:%03.5f\tl2_loss:%03.5f\t' % (
             epoch,
             np.mean(total_loss),
@@ -303,9 +331,13 @@ def fit_predict(resultsdir, modality_data,
             np.mean(total_triplet_loss), np.mean(total_l2_loss))
         for modality, loss in total_reconstruction_loss_by_modality.items():
             result_string += '%s_reconstruction_loss:%03.5f\t' % (modality, np.mean(loss))
+            cur_metrics[f"{modality}_reconstruction_loss"] = np.mean(loss)
         for modality, loss in total_triplet_loss_by_modality.items():
             result_string += '%s_triplet_loss:%03.5f\t' % (modality, np.mean(loss))
+            cur_metrics[f"{modality}_triplet_loss"] = np.mean(loss)
         print(result_string, file=source_file)
+        if log_fairops:
+            mlflow.log_metrics(cur_metrics, step=epoch)
 
         # save results at update epochs
         if (save_update_epochs) & (epoch % save_epoch == 0):
