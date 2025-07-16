@@ -283,6 +283,7 @@ def muse_fit_predict(resultsdir,
 
     if log_fairops:
         mlflow.log_params({
+            "algorithm": "muse_sc",
             "batch_size": batch_size,
             "latent_dim": latent_dim,
             "n_epochs": n_epochs,
