@@ -12,6 +12,13 @@ from .architecture import *
 from .triplet_loss import *
 import csv
 
+
+try:
+    import mlflow
+    MLFLOW_LOADED = True
+except ImportError as ie:
+    MLFLOW_LOADED = False
+
 # globals
 source_file = ''
 lambda_regul = 5
@@ -106,7 +113,6 @@ def train_model(model, optimizer, loader, label_x, label_y, epoch, lambda_super,
 
     if log_fairops:
         global cur_muse_step
-        import mlflow
 
     model.train()
 
@@ -262,8 +268,6 @@ def muse_fit_predict(resultsdir,
     :return: Model and embeddings as final outputs.
     :rtype: tuple
     """
-    if log_fairops:
-        import mlflow
 
     # get data
     data_x = modality_data[0]

@@ -6,6 +6,12 @@ import torch.nn.functional as F
 import csv
 import random
 
+try:
+    import mlflow
+    MLFLOW_LOADED = True
+except ImportError as ie:
+    MLFLOW_LOADED = False
+
 MODALITY_SEP = '___'
 
 def write_embedding_dictionary_to_file(filepath, dictionary, dims):
@@ -161,7 +167,6 @@ def fit_predict(resultsdir, modality_data,
     :rtype: generator
     """
     if log_fairops:
-        import mlflow
         mlflow.log_params({
             "batch_size": batch_size,
             "latent_dim": latent_dim,
