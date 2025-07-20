@@ -168,6 +168,7 @@ def fit_predict(resultsdir, modality_data,
     """
     if log_fairops:
         mlflow.log_params({
+            "algorithm": "protein_gps",
             "batch_size": batch_size,
             "latent_dim": latent_dim,
             "n_epochs": n_epochs,
